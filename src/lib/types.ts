@@ -22,3 +22,23 @@ export interface Database {
     }
   }
 }
+
+// Placeholder for Campaigns
+export interface Campaign {
+  id: string;
+  name: string;
+  status: 'draft' | 'active' | 'paused';
+  start_date: string;
+  end_date: string | null;
+  budget?: number;
+}
+
+// Placeholder for Campaigns
+export interface Campaign {
+  id: string;
+  name: string;
+  status: 'draft' | 'active' | 'paused';
+  start_date: string;
+  end_date: string | null;
+  budget?: number;
+}
