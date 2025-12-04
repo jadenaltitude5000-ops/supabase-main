@@ -7,5 +7,3 @@ export {
   useSupabase,
   useUser,
 } from './provider';
-
-    

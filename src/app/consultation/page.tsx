@@ -64,14 +64,14 @@ function ConsultationPageInternal() {
 
     try {
         const { error } = await supabase.from('sales_inquiries').insert({
-            userId: authUser.id,
-            userName: authUser.user_metadata.full_name,
-            userEmail: authUser.email,
-            businessName,
-            businessEmail,
-            phoneNumber,
+            user_id: authUser.id,
+            user_name: authUser.user_metadata.full_name,
+            user_email: authUser.email,
+            business_name: businessName,
+            business_email: businessEmail,
+            phone_number: phoneNumber,
             industry,
-            companySize,
+            company_size: companySize,
             message,
             type: 'Consultation Request',
         });

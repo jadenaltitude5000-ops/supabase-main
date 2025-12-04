@@ -58,8 +58,7 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { User } from '@/lib/types';
-import { useUser, useFirestore, useDoc, setDocumentNonBlocking } from '@/firebase';
-import { doc, collection, query, serverTimestamp, writeBatch, getDocs } from 'firebase/firestore';
+import { useUser, useSupabase } from '@/firebase';
 import { buildVocabulary, createTfIdfVector } from '@/lib/algorithms/text-analysis';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
@@ -104,7 +103,7 @@ const countries = [
     "Mauritius", "Cyprus", "Eswatini", "Djibouti", "Fiji", "Comoros", "Guyana", "Bhutan", "Solomon Islands", "Macau",
     "Montenegro", "Luxembourg", "Western Sahara", "Suriname", "Cape Verde", "Maldives", "Malta", "Brunei", "Belize",
     "Bahamas", "Iceland", "Vanuatu", "Barbados", "Sao Tome and Principe", "Samoa", "Saint Lucia",
-    "Kiribati", "Micronesia", "Grenada", "St. Vincent & Grenadines", "Tonga", "Seychelles",
+    "Kiribati", "Micronesia", "Grenada", "St. Vincent &amp; Grenadines", "Tonga", "Seychelles",
     "Antigua and Barbuda", "Andorra", "Dominica", "Marshall Islands", "Saint Kitts and Nevis", "Monaco", "Liechtenstein",
     "San Marino", "Palau", "Tuvalu", "Nauru", "Vatican City"
 ];
@@ -127,15 +126,28 @@ export function WorkmateRadarForm() {
   const [selectedMembers, setSelectedMembers] = useState<UserType[]>([]);
 
   const { user: authUser } = useUser();
-  const firestore = useFirestore();
+  const supabase = useSupabase();
   const { toast } = useToast();
 
-  const userDocRef = useMemo(() => {
-    if (!firestore || !authUser) return null;
-    return doc(firestore, 'users', authUser.uid);
-  }, [firestore, authUser]);
+  const [currentUser, setCurrentUser] = useState<UserType | null>(null);
+  const [isCurrentUserLoading, setIsCurrentUserLoading] = useState(true);
 
-  const { data: currentUser, isLoading: isCurrentUserLoading } = useDoc<UserType>(userDocRef);
+  useEffect(() => {
+    if (!authUser || !supabase) {
+        setIsCurrentUserLoading(false);
+        return;
+    };
+    const fetchUser = async () => {
+        setIsCurrentUserLoading(true);
+        const { data } = await supabase.from('users').select('*, freelancerProfile:freelancer_profiles(*)').eq('id', authUser.id).single();
+        if (data) {
+            const userData: UserType = { ...data, freelancerProfile: data.freelancerProfile[0] } as UserType;
+            setCurrentUser(userData);
+        }
+        setIsCurrentUserLoading(false);
+    }
+    fetchUser();
+  }, [supabase, authUser]);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -151,15 +163,16 @@ export function WorkmateRadarForm() {
     setError(null);
     setResult(null);
     
-    if (isCurrentUserLoading || !currentUser || !firestore) {
+    if (isCurrentUserLoading || !currentUser || !supabase) {
       setError('User data is not available yet. Please try again in a moment.');
       setLoading(false);
       return;
     }
 
     try {
-        const usersSnapshot = await getDocs(collection(firestore, 'users'));
-        const allUsers = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as UserType));
+        const { data: allUsers, error: usersError } = await supabase.from('users').select('*');
+
+        if(usersError) throw usersError;
 
         if (allUsers.length === 0) {
             setError("No users found in the database to perform a match.");
@@ -179,7 +192,7 @@ export function WorkmateRadarForm() {
                 skills: u.skills,
                 reliabilityScore: u.reliabilityScore,
                 location: u.location,
-                createdAt: (u.createdAt as any)?.toDate ? (u.createdAt as any).toDate().toISOString() : new Date().toISOString(),
+                createdAt: u.created_at,
             };
             return {
                 profile: serializableProfile as User,
@@ -267,36 +280,40 @@ export function WorkmateRadarForm() {
   };
 
   const handleCreateBoardroom = async (teamName: string) => {
-    if (!firestore || !authUser || !currentUser || selectedMembers.length === 0) return;
+    if (!supabase || !authUser || !currentUser || selectedMembers.length === 0) return;
     
-    const batch = writeBatch(firestore);
-    
-    const newProjectRef = doc(collection(firestore, 'projects'));
-    batch.set(newProjectRef, {
-      projectName: teamName,
-      creatorId: authUser.uid,
-      createdAt: serverTimestamp(),
-      isActive: true,
-    });
-    
-    const allMembers = [currentUser, ...selectedMembers];
-    allMembers.forEach(member => {
-        if(member) {
-            const userProjectRef = doc(firestore, 'users', member.id, 'projects', newProjectRef.id);
-            batch.set(userProjectRef, { id: newProjectRef.id, projectName: teamName, creatorId: authUser.uid, createdAt: serverTimestamp(), isActive: true, role: member.id === authUser.uid ? 'creator' : 'member' });
-            
-            const projectMemberRef = doc(collection(firestore, 'projects', newProjectRef.id, 'members'), member.id);
-            batch.set(projectMemberRef, {
-                userId: member.id,
-                role: member.id === authUser.uid ? 'creator' : 'member',
-                joinedAt: serverTimestamp(),
-                name: member.name,
-                avatar: member.avatar,
-            });
-        }
-    });
+    const { data: newProject, error: projectError } = await supabase.from('projects').insert({ project_name: teamName, creator_id: authUser.id }).select().single();
+    if(projectError || !newProject) {
+        toast({ variant: 'destructive', title: 'Error creating project', description: projectError?.message });
+        return;
+    }
 
-    await batch.commit();
+    const allMemberIds = [currentUser.id, ...selectedMembers.map(m => m.id)];
+    
+    const memberInserts = allMemberIds.map(memberId => ({
+        project_id: newProject.id,
+        user_id: memberId,
+        role: memberId === authUser.id ? 'creator' : 'member'
+    }));
+
+    const userProjectInserts = allMemberIds.map(memberId => ({
+        user_id: memberId,
+        project_id: newProject.id,
+        role: memberId === authUser.id ? 'creator' : 'member'
+    }));
+    
+    const { error: memberError } = await supabase.from('project_members').insert(memberInserts);
+    if(memberError) {
+        toast({ variant: 'destructive', title: 'Error adding members', description: memberError?.message });
+        return;
+    }
+
+    const { error: userProjectError } = await supabase.from('user_projects').insert(userProjectInserts);
+    if(userProjectError) {
+        toast({ variant: 'destructive', title: 'Error updating user projects', description: userProjectError?.message });
+        return;
+    }
+
     toast({
         title: "Boardroom Created!",
         description: `"${teamName}" has been created with ${selectedMembers.length + 1} members.`
@@ -583,7 +600,7 @@ function ResultsDisplay({
           <UserIcon className="mx-auto h-12 w-12 text-muted-foreground" />
           <h3 className="mt-4 text-lg font-semibold">No Members Found</h3>
           <p className="mt-1 text-muted-foreground">
-            We couldn&apos;t find any matches based on your criteria.
+            We couldn't find any matches based on your criteria.
             Try adjusting your profile description or location filter.
           </p>
         </CardContent>

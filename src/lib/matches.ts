@@ -74,10 +74,73 @@ export type SkillSyncNetOutput = z.infer<typeof SkillSyncNetOutputSchema>;
  * This function simulates what would run inside a secured Firebase Cloud Function.
  */
 export async function skillSyncNet(input: SkillSyncNetInput): Promise<SkillSyncNetOutput> {
-  // The complex synchronous logic here is causing build issues with Next.js.
-  // Returning a null match to allow the app to build.
-  // The matching logic will need to be re-implemented in a way that is
-  // compatible with the Next.js build system (e.g., in a dedicated API route or a different environment).
-  console.log("SkillSyncNet called, but logic is disabled to prevent build errors.");
+  const { context, clientBrief, freelancerProfile, clientBriefVector, freelancerProfilesWithVectors } = SkillSyncNetInputSchema.parse(input);
+
+  if (context === "client_seeking_freelancer") {
+    if (!clientBrief || !clientBriefVector) {
+      throw new Error("Client brief and vector are required for this context.");
+    }
+    if (freelancerProfilesWithVectors.length === 0) {
+        return { match: null }; // No candidates to match against
+    }
+
+    let bestMatch: { freelancer: User; score: number } | null = null;
+    let highestScore = -1;
+
+    freelancerProfilesWithVectors.forEach(({ profile, vector }) => {
+      const similarity = cosineSimilarity(clientBriefVector, vector);
+      
+      // Fairness algorithm: Adjust score based on experience and budget
+      const clientExperiencePref = clientBrief.experience_years || 0;
+      const freelancerExperience = profile.experience_years || 0;
+      const experienceDiff = Math.abs(clientExperiencePref - freelancerExperience);
+      const experiencePenalty = Math.min(1, experienceDiff / 10); // 10% penalty per year of difference, capped at 100%
+
+      const fairRate = (freelancerExperience * 15) + 50; // Simple formula: $50/hr base + $15/hr per year experience
+      const budgetRatio = clientBrief.budget / (fairRate * 40 * (getTimelineInMonths(clientBrief.timeline))); // Assuming 40hr/week
+      const budgetFairness = Math.min(1, budgetRatio); // Cap at 1, so overpaying doesn't give extra points
+
+      // Final score combines similarity and fairness
+      const finalScore = similarity * (1 - experiencePenalty) * budgetFairness;
+      
+      if (finalScore > highestScore) {
+        highestScore = finalScore;
+        bestMatch = { freelancer: profile, score: finalScore };
+      }
+    });
+
+    if (!bestMatch) {
+      return { match: null };
+    }
+    
+    const { freelancer, score } = bestMatch;
+    
+    const reasoning = `This freelancer is a strong match due to a high skill overlap with your project requirements. Their experience level is well-aligned with your project's scope, and the proposed budget is fair for their expertise.`;
+    
+    return {
+      match: {
+        freelancer: {
+          name: freelancer.name,
+          headline: freelancer.headline,
+          skills: freelancer.skills,
+          matchReasoning: reasoning,
+          matchConfidence: Math.min(99, Math.round(score * 100)), // Cap confidence at 99%
+        },
+      },
+    };
+  }
+
+  // Placeholder for freelancer_seeking_project context
   return { match: null };
+}
+
+function getTimelineInMonths(timeline: string): number {
+    switch (timeline) {
+        case "<1 week": return 0.25;
+        case "1-2 weeks": return 0.5;
+        case "2-4 weeks": return 1.0;
+        case "1-2 months": return 2.0;
+        case ">2 months": return 3.0; // Assume 3 for calculation
+        default: return 1.0;
+    }
 }

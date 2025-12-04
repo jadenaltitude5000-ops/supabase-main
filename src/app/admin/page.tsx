@@ -15,8 +15,8 @@ import { ThemeSwitcher } from "@/components/layout/theme-switcher";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useLanguage, Language } from '@/context/language-context';
 import { translations } from '@/lib/translations';
-import { useUser as useAuthUser, useSupabase } from '@/firebase';
-import { User, PortfolioItem, DocumentItem, Experience, Certification, FreelancerProfile, BusinessProfile, Course, InstructorApplication } from '@/lib/types';
+import { useUser, useSupabase } from '@/firebase';
+import type { User, PortfolioItem, DocumentItem, Experience, Certification, FreelancerProfile, BusinessProfile, Course, InstructorApplication } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from '@/hooks/use-toast';
@@ -36,11 +36,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { freelanceNiches } from '@/lib/freelance-niches';
 import Link from 'next/link';
 import { useFullscreen } from '@/hooks/use-fullscreen';
-import { placeholderCourses } from '@/lib/placeholder-courses';
-import { getFunctions, httpsCallable } from 'firebase/functions';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ImageEditor } from '@/components/ui/image-editor';
-import { getMessaging, getToken, onMessage } from 'firebase/messaging';
 import { CookieSettingsDialog, type ConsentSettings } from '@/components/layout/cookie-consent-banner';
 import Cookies from 'js-cookie';
 
@@ -673,7 +669,7 @@ function AdminPageInternal() {
   const [activeTab, setActiveTab] = useState('profile');
   const supabase = useSupabase();
 
-  const { user: authUser, isUserLoading } = useAuthUser();
+  const { user: authUser, isUserLoading } = useUser();
   
   const [user, setUser] = useState<User | null>(null);
   const [isUserDocLoading, setIsUserDocLoading] = useState(true);
@@ -740,7 +736,7 @@ function AdminPageInternal() {
 
 
   useEffect(() => {
-    if (!authUser?.id) {
+    if (!authUser?.id || !supabase) {
         setIsUserDocLoading(false);
         return;
     };
@@ -749,7 +745,7 @@ function AdminPageInternal() {
     const fetchUser = async () => {
         const { data, error } = await supabase
             .from('users')
-            .select(`*, freelancerProfile:freelancerProfile(*), businessProfile:businessProfile(*)`)
+            .select(`*, freelancerProfile:freelancer_profiles(*), businessProfile:business_profiles(*)`)
             .eq('id', authUser.id)
             .single();
 
@@ -760,7 +756,10 @@ function AdminPageInternal() {
         }
 
         if (data) {
-            const userData: User = { ...data, id: data.id };
+            const freelancerProfile = Array.isArray(data.freelancerProfile) ? data.freelancerProfile[0] : data.freelancerProfile;
+            const businessProfile = Array.isArray(data.businessProfile) ? data.businessProfile[0] : data.businessProfile;
+
+            const userData: User = { ...data, freelancerProfile, businessProfile };
             setUser(userData);
         }
         setIsUserDocLoading(false);
@@ -777,7 +776,7 @@ function AdminPageInternal() {
 
   useEffect(() => {
     const fetchUserCourses = async () => {
-        if (!authUser || !isInstructor) {
+        if (!authUser || !isInstructor || !supabase) {
             setIsLoadingCourses(false);
             return;
         };
@@ -792,7 +791,7 @@ function AdminPageInternal() {
 
   useEffect(() => {
       const fetchApplications = async () => {
-        if (!isAdmin) {
+        if (!isAdmin || !supabase) {
             setIsLoadingApplications(false);
             return;
         };
@@ -855,7 +854,7 @@ function AdminPageInternal() {
 
   
   const handleProfileTypeChange = async (value: 'freelancer' | 'business') => {
-    if (!authUser?.id) return;
+    if (!authUser?.id || !supabase) return;
     setProfileType(value);
     const newCategory = value === 'business' ? 'business' : user?.category === 'business' ? 'other' : user?.category;
     const { error } = await supabase.from('users').update({ category: newCategory }).eq('id', authUser.id);
@@ -870,12 +869,13 @@ function AdminPageInternal() {
   };
 
   const handleLogout = async () => {
+    if (!supabase) return;
     await supabase.auth.signOut();
     router.push('/logout');
   };
 
   const handleAvatarUpload = async (dataUrl: string) => {
-    if (!authUser?.id) {
+    if (!authUser?.id || !supabase) {
         toast({
             variant: "destructive",
             title: "Authentication Error",
@@ -906,7 +906,7 @@ function AdminPageInternal() {
 
 
   const handleSaveChanges = async () => {
-      if (!authUser?.id) return;
+      if (!authUser?.id || !supabase) return;
       setIsSaving(true);
       
       const newHandle = handle.trim().toLowerCase();
@@ -949,7 +949,7 @@ function AdminPageInternal() {
   };
 
   const handleAccountChanges = async () => {
-    if (!authUser?.id) return;
+    if (!authUser?.id || !supabase) return;
     setIsSaving(true);
     const updatedData: Partial<User> = {
       phoneNumber,
@@ -967,7 +967,7 @@ function AdminPageInternal() {
   };
   
   const handleSaveShareableProfile = async () => {
-    if (!authUser?.id) return;
+    if (!authUser?.id || !supabase) return;
     setIsSaving(true);
     const dataToUpdate: Partial<User> = {
         externalUrl,
@@ -985,7 +985,7 @@ function AdminPageInternal() {
   };
 
   const handleSaveMatchingProfile = async () => {
-    if (!user || !authUser) return;
+    if (!user || !authUser || !supabase) return;
     setIsSaving(true);
 
     if (profileType === 'business') {
@@ -1029,31 +1029,69 @@ function AdminPageInternal() {
   };
 
   
-  const handleAddPortfolioItem = (itemData: Omit<PortfolioItem, 'id' | 'authorId' | 'author' | 'authorAvatar' | 'authorHeadline' | 'mediaType'>) => {
-    // This should now update the 'portfolio' JSONB column on the 'users' table.
-    toast({ title: "Feature not yet migrated." });
+  const handleAddPortfolioItem = async (itemData: Omit<PortfolioItem, 'id' | 'authorId' | 'author' | 'authorAvatar' | 'authorHeadline' | 'mediaType'>) => {
+    if (!authUser || !supabase) return;
+    const newPortfolio = [...(user?.portfolio || []), { id: crypto.randomUUID(), ...itemData }];
+    const { error } = await supabase.from('users').update({ portfolio: newPortfolio }).eq('id', authUser.id);
+    if(error) toast({ variant: 'destructive', title: "Error", description: "Could not save portfolio item." });
+    else {
+      setPortfolioItems(newPortfolio as PortfolioItem[]);
+      toast({ title: 'Portfolio Updated!' });
+    }
   }
 
-  const handleAddDocument = (fileUrl: string, name: string) => {
-     // This should now update the 'documents' JSONB column on the 'users' table.
-    toast({ title: "Feature not yet migrated." });
+  const handleAddDocument = async (fileUrl: string, name: string) => {
+    if (!authUser || !supabase) return;
+     const newDocument: DocumentItem = {
+        title: name,
+        fileUrl,
+        fileType: name.split('.').pop() as any || 'pdf',
+        uploadedAt: new Date(),
+     };
+     const newDocuments = [...(user?.documents || []), newDocument];
+     const { error } = await supabase.from('users').update({ documents: newDocuments }).eq('id', authUser.id);
+     if(error) toast({ variant: 'destructive', title: "Error", description: "Could not save document." });
+     else {
+         setDocuments(newDocuments);
+         toast({ title: 'Document Uploaded!' });
+     }
   }
   
-  const handleRemoveDocument = (docToRemove: DocumentItem) => {
-    toast({ title: "Feature not yet migrated." });
+  const handleRemoveDocument = async (docToRemove: DocumentItem) => {
+    if (!authUser || !supabase) return;
+    const newDocuments = (user?.documents || []).filter(doc => doc.fileUrl !== docToRemove.fileUrl);
+    const { error } = await supabase.from('users').update({ documents: newDocuments }).eq('id', authUser.id);
+    if(error) toast({ variant: 'destructive', title: "Error", description: "Could not remove document." });
+    else {
+        setDocuments(newDocuments);
+        toast({ title: 'Document Removed' });
+    }
   }
 
-  const handleAddExperience = (newItem: Experience) => {
-     // This should now update the 'experiences' JSONB column on the 'users' table.
-    toast({ title: "Feature not yet migrated." });
+  const handleAddExperience = async (newItem: Experience) => {
+    if (!authUser || !supabase) return;
+    const newExperiences = [...(user?.experiences || []), newItem];
+    const { error } = await supabase.from('users').update({ experiences: newExperiences }).eq('id', authUser.id);
+    if(error) toast({ variant: 'destructive', title: "Error", description: "Could not save experience." });
+    else {
+        setExperiences(newExperiences);
+        toast({ title: 'Experience Added!' });
+    }
   };
 
-  const handleAddCertification = (newItem: Certification) => {
-    toast({ title: "Feature not yet migrated." });
+  const handleAddCertification = async (newItem: Certification) => {
+    if (!authUser || !supabase) return;
+    const newCertifications = [...(user?.certifications || []), newItem];
+    const { error } = await supabase.from('users').update({ certifications: newCertifications }).eq('id', authUser.id);
+    if(error) toast({ variant: 'destructive', title: "Error", description: "Could not save certification." });
+    else {
+        setCertifications(newCertifications);
+        toast({ title: 'Certification Added!' });
+    }
   };
 
   const handleCreateCourse = async (newCourseData: Partial<Course>) => {
-    if (!authUser || !user) return;
+    if (!authUser || !user || !supabase) return;
     const completeCourseData: Omit<Course, 'id' | 'createdAt'> = {
         ...newCourseData,
         instructorId: authUser.id,
@@ -1063,10 +1101,11 @@ function AdminPageInternal() {
         studentCount: 0,
     } as Omit<Course, 'id' | 'createdAt'>;
 
-    const { error } = await supabase.from('courses').insert(completeCourseData);
+    const { data: inserted, error } = await supabase.from('courses').insert(completeCourseData).select();
     if(error) {
         toast({ variant: 'destructive', title: 'Error creating course', description: error.message });
     } else {
+        if(inserted) setUserCourses(prev => [...prev, ...inserted as Course[]]);
         toast({
         title: "Course Created!",
         description: `"${newCourseData.title}" is now ready for content.`
@@ -1075,6 +1114,7 @@ function AdminPageInternal() {
   };
 
   const handleUpdateApplication = async (appId: string, userId: string, status: 'approved' | 'rejected') => {
+    if (!supabase) return;
     const { error: appError } = await supabase.from('instructor_applications').update({ status }).eq('id', appId);
     if (appError) {
         toast({ variant: 'destructive', title: 'Error updating application', description: appError.message });
@@ -1088,6 +1128,8 @@ function AdminPageInternal() {
              return;
         }
     }
+    
+    setApplications(prev => prev.filter(app => app.id !== appId));
 
     toast({
         title: `Application ${status}`,

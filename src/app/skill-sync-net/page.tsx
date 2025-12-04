@@ -17,8 +17,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import { ClientOnly } from "@/components/layout/client-only";
-import { useUserCollection, useFirestore, useUser as useAuthUser, setDocumentNonBlocking, useDoc } from "@/firebase";
-import { collection, query, limit, where, doc, Timestamp, getDocs } from 'firebase/firestore';
+import { useUser as useAuthUser, useSupabase } from "@/firebase";
 import type { User as UserType, FreelancerProfile } from '@/lib/types';
 import { Badge } from "@/components/ui/badge";
 import { z } from "zod";
@@ -425,22 +424,35 @@ function ClientView() {
     const [selectedNiches, setSelectedNiches] = useState<string[]>([]);
     const [isGuidelinesOpen, setIsGuidelinesOpen] = useState(false);
     const [candidateUsers, setCandidateUsers] = useState<UserType[]>([]);
-    const firestore = useFirestore();
+    const supabase = useSupabase();
     const { user: authUser } = useAuthUser();
 
+    const [currentUser, setCurrentUser] = useState<UserType | null>(null);
+    const [isLoadingCurrentUser, setIsLoadingCurrentUser] = useState(true);
+
     useEffect(() => {
-        const hasSeenGuidelines = sessionStorage.getItem('seenClientGuidelines');
-        if (!hasSeenGuidelines) {
-            setIsGuidelinesOpen(true);
-            sessionStorage.setItem('seenClientGuidelines', 'true');
+        if (typeof window !== 'undefined') {
+            const hasSeenGuidelines = sessionStorage.getItem('seenClientGuidelines');
+            if (!hasSeenGuidelines) {
+                setIsGuidelinesOpen(true);
+                sessionStorage.setItem('seenClientGuidelines', 'true');
+            }
         }
     }, []);
 
-    const currentUserQuery = useMemo(() => {
-        if (!firestore || !authUser) return null;
-        return doc(firestore, 'users', authUser.uid);
-    }, [firestore, authUser]);
-    const { data: currentUser, isLoading: isLoadingCurrentUser } = useDoc<UserType>(currentUserQuery);
+    useEffect(() => {
+        if (!authUser || !supabase) {
+            setIsLoadingCurrentUser(false);
+            return;
+        }
+        const fetchUser = async () => {
+            setIsLoadingCurrentUser(true);
+            const { data } = await supabase.from('users').select('*').eq('id', authUser.id).single();
+            if (data) setCurrentUser(data as UserType);
+            setIsLoadingCurrentUser(false);
+        }
+        fetchUser();
+    }, [supabase, authUser]);
 
     const form = useForm<ClientFormValues>({
         resolver: zodResolver(clientFormSchema),
@@ -459,7 +471,7 @@ function ClientView() {
 
     const accountAge = useMemo(() => {
         if (!currentUser?.createdAt) return 0;
-        const createdAtDate = (currentUser.createdAt as Timestamp).toDate();
+        const createdAtDate = new Date(currentUser.createdAt as string);
         return differenceInDays(new Date(), createdAtDate);
     }, [currentUser]);
 
@@ -489,8 +501,8 @@ function ClientView() {
         setError(null);
         setResult(null);
 
-        if (!firestore) {
-            setError("Firestore is not available.");
+        if (!supabase) {
+            setError("Supabase is not available.");
             setLoading(false);
             return;
         }
@@ -504,11 +516,14 @@ function ClientView() {
                 return;
             }
 
-            const usersRef = collection(firestore, 'users');
-            const q = query(usersRef, where('skills', 'array-contains-any', skillsAndNiches.slice(0, 10)), limit(50));
-            const querySnapshot = await getDocs(q);
-            const candidates = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as UserType));
-            setCandidateUsers(candidates); // Store for later use
+            const { data: candidates, error: fetchError } = await supabase
+                .from('users')
+                .select('*')
+                .contains('skills', skillsAndNiches);
+
+            if (fetchError) throw fetchError;
+            
+            setCandidateUsers(candidates as UserType[]);
 
             if (candidates.length === 0) {
                 setResult({ match: null });
@@ -524,7 +539,7 @@ function ClientView() {
             
             const clientBriefVector = createTfIdfVector(briefText, combinedCorpus, vocabulary);
             const freelancerProfilesWithVectors = candidates.map(u => ({
-                profile: u,
+                profile: u as UserType,
                 vector: createTfIdfVector(`${u.bio || ''} ${u.skills?.join(' ') || ''}`, combinedCorpus, vocabulary),
             }));
 
@@ -783,37 +798,55 @@ function FreelancerView() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [isGuidelinesOpen, setIsGuidelinesOpen] = useState(false);
-    const firestore = useFirestore();
+    const supabase = useSupabase();
     const { user: authUser } = useAuthUser();
 
+    const [currentUser, setCurrentUser] = useState<UserType | null>(null);
+    const [isLoadingUsers, setIsLoadingUsers] = useState(true);
+
+    const [freelancerProfile, setFreelancerProfile] = useState<FreelancerProfile | null>(null);
+    const [isLoadingFreelancerProfile, setIsLoadingFreelancerProfile] = useState(true);
+
     useEffect(() => {
-        const hasSeenGuidelines = localStorage.getItem('seenFreelancerGuidelines');
-        if (!hasSeenGuidelines) {
-            setIsGuidelinesOpen(true);
-            localStorage.setItem('seenFreelancerGuidelines', 'true');
+        if (typeof window !== 'undefined') {
+            const hasSeenGuidelines = localStorage.getItem('seenFreelancerGuidelines');
+            if (!hasSeenGuidelines) {
+                setIsGuidelinesOpen(true);
+                localStorage.setItem('seenFreelancerGuidelines', 'true');
+            }
         }
     }, []);
 
-    const userQuery = useMemo(() => {
-        if(!firestore || !authUser) return null;
-        return doc(firestore, 'users', authUser.uid);
-    }, [firestore, authUser]);
-    const { data: currentUser, isLoading: isLoadingUsers } = useDoc<UserType>(userQuery);
+     useEffect(() => {
+        if (!authUser || !supabase) {
+            setIsLoadingUsers(false);
+            setIsLoadingFreelancerProfile(false);
+            return;
+        }
 
-    const freelancerProfileQuery = useMemo(() => {
-        if (!currentUser) return null;
-        return doc(firestore, 'users', currentUser.id, 'freelancerProfile', 'main');
-    }, [currentUser, firestore]);
-    const { data: freelancerProfile, isLoading: isLoadingFreelancerProfile } = useDoc<FreelancerProfile>(freelancerProfileQuery);
+        const fetchUserData = async () => {
+            setIsLoadingUsers(true);
+            const { data: userData } = await supabase.from('users').select('*').eq('id', authUser.id).single();
+            if (userData) setCurrentUser(userData as UserType);
+            setIsLoadingUsers(false);
+
+            setIsLoadingFreelancerProfile(true);
+            const { data: profileData } = await supabase.from('freelancer_profiles').select('*').eq('id', authUser.id).single();
+            if (profileData) setFreelancerProfile(profileData as FreelancerProfile);
+            setIsLoadingFreelancerProfile(false);
+        };
+
+        fetchUserData();
+    }, [supabase, authUser]);
 
     const profileCompletion = useMemo(() => {
-        if (!currentUser || !freelancerProfile) return { progress: 0 };
+        if (!currentUser) return { progress: 0 };
         const checks = {
             hasBio: !!currentUser.bio,
             hasJobTitle: !!currentUser.jobTitle,
             hasEnoughSkills: (currentUser.skills?.length || 0) >= 7,
             hasExperience: (currentUser.experiences?.length || 0) > 0,
-            hasSkillSyncInfo: !!(freelancerProfile.title && freelancerProfile.availability),
+            hasSkillSyncInfo: !!(freelancerProfile?.title && freelancerProfile?.availability),
         };
         const completedCount = Object.values(checks).filter(Boolean).length;
         const totalChecks = Object.keys(checks).length;
@@ -834,7 +867,7 @@ function FreelancerView() {
 
     const accountAge = useMemo(() => {
         if (!currentUser?.createdAt) return 0;
-        const createdAtDate = (currentUser.createdAt as Timestamp).toDate();
+        const createdAtDate = new Date(currentUser.createdAt as string);
         return differenceInDays(new Date(), createdAtDate);
     }, [currentUser]);
 
@@ -842,9 +875,9 @@ function FreelancerView() {
     const loginActivity = useMemo(() => {
         if (!currentUser || !currentUser.loginHistory || accountAge <= 0) return 0;
         const relevantLogins = currentUser.loginHistory.filter(login => 
-            differenceInDays(new Date(), (login as Timestamp).toDate()) <= 30
+            differenceInDays(new Date(), new Date(login as string)) <= 30
         );
-        const uniqueLoginDays = new Set(relevantLogins.map(login => (login as Timestamp).toDate().toDateString())).size;
+        const uniqueLoginDays = new Set(relevantLogins.map(login => new Date(login as string).toDateString())).size;
         return (uniqueLoginDays / Math.min(accountAge, 30)) * 100;
     }, [currentUser, accountAge]);
 
@@ -863,7 +896,7 @@ function FreelancerView() {
         }
 
         try {
-            const freelancerProfile = {
+            const freelancerProfileData = {
                 name: currentUser.name,
                 headline: currentUser.headline,
                 bio: currentUser.bio,
@@ -874,7 +907,7 @@ function FreelancerView() {
 
             const input: SkillSyncNetInput = {
                 context: "freelancer_seeking_project",
-                freelancerProfile: freelancerProfile,
+                freelancerProfile: freelancerProfileData,
                 clientBriefVector: new Map(), 
                 freelancerProfilesWithVectors: [],
             };
@@ -993,19 +1026,24 @@ function MatchSkeleton({ isClientView }: { isClientView: boolean }) {
 function MatchCardActions({ userId }: { userId: string }) {
     const { toast } = useToast();
     const { user: authUser } = useAuthUser();
-    const firestore = useFirestore();
+    const supabase = useSupabase();
 
     const handleAddColleague = async () => {
-        if (!authUser || !firestore) {
+        if (!authUser || !supabase) {
             toast({ variant: 'destructive', title: "You must be logged in." });
             return;
         }
-        const colleagueRef = doc(firestore, 'users', authUser.uid, 'colleagues', userId);
-        await setDocumentNonBlocking(colleagueRef, { addedAt: new Date() });
-        toast({
-            title: "Colleague Added",
-            description: "They have been added to your 'My Colleagues' list in Cohorts.",
-        });
+        
+        const { error } = await supabase.from('colleagues').insert({ user_id: authUser.id, colleague_id: userId });
+
+        if(error) {
+            toast({ variant: 'destructive', title: "Error", description: "Could not add colleague." });
+        } else {
+             toast({
+                title: "Colleague Added",
+                description: "They have been added to your 'My Colleagues' list in Boardrooms.",
+            });
+        }
     };
     
     const handleLike = () => {
