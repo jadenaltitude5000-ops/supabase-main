@@ -12,9 +12,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { ClientOnly } from "@/components/layout/client-only";
 import { Loader2, UserPlus } from "lucide-react";
-import { useAuth, useFirestore, useUser } from "@/firebase";
-import { createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, UserCredential, AuthErrorCodes } from "firebase/auth";
-import { doc, serverTimestamp, getDoc, setDoc } from "firebase/firestore";
+import { useSupabase, useUser } from "@/firebase";
+import { AuthError } from "@supabase/supabase-js";
 import { useContext, useEffect, useState } from "react";
 import { LoadingLink } from "@/components/layout/loading-link";
 import { LoadingContext } from "@/context/loading-context";
@@ -28,27 +27,14 @@ const signupSchema = z.object({
 
 type SignupFormValues = z.infer<typeof signupSchema>;
 
-function getAuthErrorMessage(errorCode: string): string {
-    switch (errorCode) {
-        case AuthErrorCodes.EMAIL_EXISTS:
-            return "This email address is already in use by another account.";
-        case AuthErrorCodes.INVALID_EMAIL:
-            return "The email address is not valid.";
-        case AuthErrorCodes.WEAK_PASSWORD:
-            return "The password is too weak. It must be at least 6 characters long.";
-        case AuthErrorCodes.NETWORK_REQUEST_FAILED:
-            return "Network error. Please check your internet connection.";
-        case "auth/popup-blocked":
-            return "The sign-in popup was blocked by your browser. Please allow popups for this site and try again.";
-        case "auth/popup-closed-by-user":
-            return "The sign-in process was canceled. Please try again if this was unintentional.";
-        case "auth/cancelled-popup-request":
-            return "The sign-in process was canceled. Please try again if this was unintentional.";
-        case "auth/unauthorized-domain":
-            return "This domain is not authorized for OAuth operations. Please go to the Firebase Console -> Authentication -> Settings -> Authorized Domains and add this domain.";
-        default:
-            return "An unexpected error occurred. Please try again later.";
+function getAuthErrorMessage(error: AuthError): string {
+    if (error.message.includes("User already registered")) {
+        return "This email address is already in use. Please sign in or use a different email.";
     }
+    if (error.message.includes("Password should be at least 6 characters")) {
+         return "The password is too weak. It must be at least 6 characters long.";
+    }
+    return error.message || "An unexpected error occurred. Please try again later.";
 }
 
 function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
@@ -68,8 +54,7 @@ function SignupPageInternal() {
   const { toast } = useToast();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const auth = useAuth();
-  const firestore = useFirestore();
+  const supabase = useSupabase();
   const { user: authUser, isUserLoading } = useUser();
   const [referrerName, setReferrerName] = useState<string | null>(null);
   const { showLoader, hideLoader } = useContext(LoadingContext);
@@ -88,93 +73,16 @@ function SignupPageInternal() {
   useEffect(() => {
     const fetchReferrer = async () => {
         const referrerId = searchParams.get('ref');
-        if (referrerId && firestore) {
-            const referrerDocRef = doc(firestore, "users", referrerId);
-            const referrerDoc = await getDoc(referrerDocRef);
-            if (referrerDoc.exists()) {
-                setReferrerName(referrerDoc.data().name);
+        if (referrerId && supabase) {
+            const { data, error } = await supabase.from("users").select('name').eq('id', referrerId).single();
+            if (data) {
+                setReferrerName(data.name);
             }
         }
     };
     fetchReferrer();
-  }, [searchParams, firestore]);
+  }, [searchParams, supabase]);
 
-  const handleAuthSuccess = async (userCredential: UserCredential, profileData?: Partial<SignupFormValues>) => {
-    if (!firestore) return;
-
-    const user = userCredential.user;
-    const userDocRef = doc(firestore, "users", user.uid);
-    const userDoc = await getDoc(userDocRef);
-    
-    if (userDoc.exists()) {
-        // User already exists, just sign them in.
-        toast({
-            title: "Welcome Back!",
-            description: "You've been signed in successfully.",
-        });
-        router.push('/professions');
-        return;
-    }
-    
-    const referrerId = searchParams.get('ref');
-    const isVerifiedUser = adminEmails.includes(user.email || "");
-
-    // Note: To import more data like company or age from Google, you would need to:
-    // 1. Request additional scopes (e.g., 'https://www.googleapis.com/auth/user.organization.read') during the Google sign-in flow.
-    // 2. Use the access token from the credential to call the Google People API.
-    // This is not implemented here due to the complexity of handling OAuth tokens and API calls.
-    const googleCredential = GoogleAuthProvider.credentialFromResult(userCredential);
-    // const accessToken = googleCredential?.accessToken;
-    // Then use accessToken to fetch from Google People API.
-
-    const finalProfileData = {
-        id: user.uid,
-        name: profileData?.fullName || user.displayName || 'Sentrybase User',
-        handle: user.email?.split('@')[0] || `user${user.uid.substring(0,5)}`,
-        email: user.email,
-        phoneNumber: user.phoneNumber || '',
-        headline: "New Sentrybase Member",
-        bio: "Just joined Sentrybase! Looking forward to connecting and building my profile.",
-        avatar: user.photoURL || "", 
-        coverImage: "",
-        skills: [],
-        portfolio: [],
-        category: 'other',
-        reliabilityScore: 75,
-        communityStanding: "New Member",
-        disputes: 0,
-        createdAt: serverTimestamp(),
-        vectors: {},
-        following: [],
-        followers: [],
-        followerCount: 0,
-        followingCount: 0,
-        postCount: 0,
-        experience_years: 0,
-        isAdmin: isVerifiedUser,
-        isSentrybaseVerified: isVerifiedUser,
-        referredBy: referrerId || null,
-        fcmTokens: [],
-    };
-    
-    try {
-        await setDoc(userDocRef, finalProfileData, { merge: true });
-    } catch (error: any) {
-        console.error("Firestore write failed:", error);
-        toast({
-            variant: "destructive",
-            title: "Signup Incomplete",
-            description: "Could not save your profile. Please contact support.",
-        });
-        return;
-    }
-    
-    toast({
-        title: "Welcome to Sentrybase!",
-        description: "Redirecting you...",
-    });
-    router.push('/professions');
-  }
 
   // Effect to redirect already logged-in users
   useEffect(() => {
@@ -184,45 +92,55 @@ function SignupPageInternal() {
   }, [authUser, isUserLoading, router]);
 
   const onSubmit: SubmitHandler<SignupFormValues> = async (data) => {
-    if (!auth) {
-        toast({ variant: "destructive", title: "Signup Failed", description: "Authentication service not available." });
-        return;
-    }
-    try {
-      const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
-      await handleAuthSuccess(userCredential, data);
-    } catch (error: any) {
-      console.error("Signup failed:", error);
+    showLoader('Creating account...');
+    const { data: { user }, error } = await supabase.auth.signUp({
+        email: data.email,
+        password: data.password,
+        options: {
+            data: {
+                full_name: data.fullName,
+            }
+        }
+    });
+
+    if (error) {
       toast({
         variant: "destructive",
         title: "Signup Failed",
-        description: getAuthErrorMessage(error.code),
+        description: getAuthErrorMessage(error),
       });
+    } else if (user) {
+        // Supabase now handles profile creation via a trigger, so no client-side profile creation needed.
+        toast({
+            title: "Confirmation Email Sent!",
+            description: "Please check your inbox to verify your email address and complete registration.",
+            duration: 9000,
+        });
+        router.push('/signin');
     }
+    hideLoader();
   };
 
-  const handleGoogleSignUp = () => {
-    if (!auth) return;
-    const provider = new GoogleAuthProvider();
+  const handleGoogleSignUp = async () => {
     showLoader('Authenticating...');
-    signInWithPopup(auth, provider)
-      .then(handleAuthSuccess)
-      .catch((error: any) => {
-        console.error("Google Sign-up failed:", error);
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      }
+    });
+     if (error) {
         toast({
           variant: "destructive",
           title: "Google Sign-up Failed",
-          description: getAuthErrorMessage(error.code),
+          description: getAuthErrorMessage(error),
           duration: 9000,
         });
-      })
-      .finally(() => {
-        hideLoader();
-      });
+      }
+    hideLoader();
   };
   
   if (isUserLoading || authUser) {
-    // A global loader should handle this, but we keep a minimal one as a fallback.
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />
@@ -337,3 +255,5 @@ export default function SignupPage() {
         </ClientOnly>
     )
 }
+
+    

@@ -9,8 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, useFirestore, addDocumentNonBlocking } from '@/firebase';
-import { collection, serverTimestamp } from 'firebase/firestore';
+import { useUser, useSupabase } from '@/firebase';
 import { ClientOnly } from '@/components/layout/client-only';
 import { Loader2, ArrowLeft, FileText } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -38,7 +37,7 @@ Are you entering a new market or expanding in an existing one?
 function ConsultationPageInternal() {
   const { toast } = useToast();
   const { user: authUser } = useUser();
-  const firestore = useFirestore();
+  const supabase = useSupabase();
   const router = useRouter();
 
   const [businessName, setBusinessName] = useState('');
@@ -52,7 +51,7 @@ function ConsultationPageInternal() {
   const isFormValid = message.trim() && businessName.trim() && businessEmail.trim() && industry && companySize;
 
   const handleSubmit = async () => {
-    if (!isFormValid || !authUser || !firestore) {
+    if (!isFormValid || !authUser || !supabase) {
       toast({
         variant: 'destructive',
         title: 'Error',
@@ -63,11 +62,10 @@ function ConsultationPageInternal() {
 
     setIsSubmitting(true);
 
-    const inquiriesCollection = collection(firestore, 'salesInquiries');
     try {
-        await addDocumentNonBlocking(inquiriesCollection, {
-            userId: authUser.uid,
-            userName: authUser.displayName,
+        const { error } = await supabase.from('sales_inquiries').insert({
+            userId: authUser.id,
+            userName: authUser.user_metadata.full_name,
             userEmail: authUser.email,
             businessName,
             businessEmail,
@@ -75,9 +73,10 @@ function ConsultationPageInternal() {
             industry,
             companySize,
             message,
-            createdAt: serverTimestamp(),
             type: 'Consultation Request',
         });
+
+        if (error) throw error;
 
         toast({
             title: 'Inquiry Sent',
@@ -92,12 +91,12 @@ function ConsultationPageInternal() {
         setCompanySize('');
         setMessage('');
 
-    } catch(error) {
+    } catch(error: any) {
         console.error(error);
         toast({
             variant: 'destructive',
             title: 'Submission Error',
-            description: 'There was a problem submitting your inquiry. Please try again.',
+            description: error.message || 'There was a problem submitting your inquiry. Please try again.',
         });
     } finally {
         setIsSubmitting(false);

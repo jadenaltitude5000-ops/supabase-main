@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useSupabase } from '@/firebase/provider';
 import type { User } from '@/lib/types';
 
@@ -101,5 +101,3 @@ export function useSuggestedUsers(
 
   return { suggestedUsers, isLoading, error };
 }
-
-    

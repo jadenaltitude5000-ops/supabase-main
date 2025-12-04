@@ -1,6 +1,8 @@
 
-import { Timestamp, FieldValue } from 'firebase/firestore';
+import { FieldValue } from 'firebase/firestore';
 import { z } from 'zod';
+import type { Timestamp } from '@supabase/supabase-js';
+
 
 export type PortfolioItem = {
   id: string;
@@ -147,6 +149,7 @@ export type Post = {
     isSentrybaseVerified?: boolean;
     hasActiveSubscription?: boolean;
   };
+  created_at: Timestamp | FieldValue;
   createdAt: Timestamp | FieldValue;
   content: string;
   image?: string;
@@ -171,7 +174,7 @@ export type Post = {
     keywords: string[];
   };
   isReply?: boolean;
-  parentPostId?: string;
+  parent_post_id?: string;
 };
 
 export type Vote = {
@@ -303,8 +306,8 @@ export type AIWorkmateRadarOutput = z.infer<typeof AIWorkmateRadarOutputSchema>;
 export type Bookmark = {
     id: string;
     type: 'user' | 'post' | 'job';
-    refId: string;
-    savedAt: Timestamp | FieldValue;
+    ref_id: string;
+    saved_at: Timestamp | FieldValue;
     content: {
         title: string;
         description: string;
@@ -314,11 +317,12 @@ export type Bookmark = {
 
 export type Notification = {
     id: string;
+    user_id: string;
     type: 'system' | 'connection' | 'job_application' | 'project_invite';
     title: string;
     description: string;
-    createdAt: Timestamp | FieldValue;
-    isRead: boolean;
+    created_at: Timestamp | FieldValue;
+    is_read: boolean;
     link?: string;
     metadata?: Record<string, any>;
 };
@@ -367,7 +371,7 @@ export type Course = {
   level: 'beginner' | 'intermediate' | 'advanced';
   rating: number;
   studentCount: number;
-  createdAt: Timestamp | Date | FieldValue;
+  created_at: Timestamp | Date | FieldValue;
 };
 
 export type CourseModule = {
@@ -473,6 +477,7 @@ export type SaaSProduct = {
   price: string;
   tags: string[];
   websiteUrl: string;
+  created_at: Timestamp;
 };
 
     

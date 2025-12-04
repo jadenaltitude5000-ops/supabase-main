@@ -34,6 +34,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AgentContext } from '@/context/agent-context';
 import { MainScrollContext } from '@/components/layout/app-layout';
 import { useRouter } from 'next/navigation';
+import { useSuggestedUsers } from '@/hooks/use-suggested-users';
 
 function formatRelativeTime(timestamp: string): string {
     if (!timestamp) return 'just now';
@@ -247,7 +248,7 @@ function PostComposer({ onPostCreated }: { onPostCreated: (newPost: PostType) =>
   const [isActive, setIsActive] = useState(false);
   const activityTimer = useRef<NodeJS.Timeout | null>(null);
 
-  const { user: authUser, isUserLoading: isAuthUserLoading } = useAuthUser();
+  const { user: authUser, isUserLoading: isAuthUserLoading } = useUser();
   const { toast } = useToast();
   const supabase = useSupabase();
 
@@ -702,7 +703,7 @@ function ReplyComposer({ postId, onReplySent }: { postId: string; onReplySent: (
                 },
                 content: content.trim(),
                 type: 'default',
-                post_id: postId,
+                parent_post_id: postId,
             };
             
             const { data: insertedReply, error: insertError } = await supabase.from('replies').insert(newReplyData).select().single();
@@ -752,7 +753,7 @@ function RepliesThread({ postId, depth }: { postId: string, depth: number }) {
         const fetchReplies = async () => {
             if (!supabase || !postId) return;
             setIsLoading(true);
-            const { data, error } = await supabase.from('replies').select('*, author:users(*)').eq('post_id', postId).order('created_at', { ascending: true });
+            const { data, error } = await supabase.from('replies').select('*, author:users(*)').eq('parent_post_id', postId).order('created_at', { ascending: true });
             
             if(data) {
                 const formattedReplies = data.map((reply: any) => ({
@@ -771,7 +772,7 @@ function RepliesThread({ postId, depth }: { postId: string, depth: number }) {
         fetchReplies();
 
         const channel = supabase.channel(`replies:${postId}`)
-          .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'replies', filter: `post_id=eq.${postId}`}, 
+          .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'replies', filter: `parent_post_id=eq.${postId}`}, 
             async (payload) => {
               const { data: authorData } = await supabase.from('users').select('*').eq('id', (payload.new as any).userId).single();
               const newReply = { ...payload.new, author: authorData } as PostType;
@@ -870,7 +871,6 @@ function useRealtimePost(initialPost: PostType) {
     const [authorProfile, setAuthorProfile] = useState<User | null>(null);
 
     useEffect(() => {
-        // Since we are now fetching post with author data, we just need to listen for post updates.
         const channel = supabase
             .channel(`post:${initialPost.id}`)
             .on('postgres_changes', {
@@ -887,8 +887,6 @@ function useRealtimePost(initialPost: PostType) {
 
     }, [supabase, initialPost.id, initialPost.isReply]);
     
-    // The author profile is now passed directly into the PostCard, so we don't need to fetch it here again.
-    // The passed author data is used for the initial render.
     useEffect(() => {
         setAuthorProfile(initialPost.author as User);
     }, [initialPost.author]);
@@ -953,7 +951,7 @@ function PostCard({ post: initialPost, isReply = false, onReplyDeleted, onReplyU
             return;
         }
         
-        const { error } = await supabase.functions.invoke('on-gig-application', {
+        const { error } = await supabase.functions.invoke('gig-application', {
             body: {
                 gigOwnerId: post.author.id,
                 gigId: post.id,
@@ -1249,7 +1247,7 @@ function PostCard({ post: initialPost, isReply = false, onReplyDeleted, onReplyU
 }
 
 function UserProfileDialog({ user }: { user: User }) {
-    const { user: authUser } = useAuthUser();
+    const { user: authUser } = useUser();
     const [isFollowing, setIsFollowing] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const supabase = useSupabase();
@@ -1411,8 +1409,7 @@ function FollowButton({ currentUserId, targetUserId, onFollow }: { currentUserId
 
 function SuggestedUsers() {
     const { user: authUser } = useUser();
-    // This hook needs to be reimplemented for Supabase
-    // const { suggestedUsers: allSuggestions, isLoading: isLoadingSuggestions } = useSuggestedUsers(authUser?.id);
+    const { suggestedUsers: allSuggestions, isLoading: isLoadingSuggestions } = useSuggestedUsers(authUser?.id);
     const [displaySuggestions, setDisplaySuggestions] = useState<User[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [isOpen, setIsOpen] = useState(true);
@@ -1423,6 +1420,13 @@ function SuggestedUsers() {
             setIsOpen(JSON.parse(storedState));
         }
     }, []);
+
+    useEffect(() => {
+        if (allSuggestions) {
+            const dismissed = JSON.parse(localStorage.getItem('dismissedUsers') || '[]');
+            setDisplaySuggestions(allSuggestions.filter(u => !dismissed.includes(u.id)).slice(0, 3));
+        }
+    }, [allSuggestions]);
 
     const handleOpenChange = (open: boolean) => {
         setIsOpen(open);
@@ -1442,7 +1446,7 @@ function SuggestedUsers() {
         }
     };
     
-    if (isLoading) {
+    if (isLoadingSuggestions) {
         return (
             <Collapsible open={isOpen} onOpenChange={handleOpenChange} className="-mt-4">
                 <Skeleton className="h-6 w-1/3 mb-2" />
@@ -1769,5 +1773,3 @@ export default function ProfessionsPage() {
         </ClientOnly>
     );
 }
-
-    

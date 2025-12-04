@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/card';
 import { CheckCircle, Lock, Loader2, ShoppingCart, Gift, Heart, Feather, ShieldCheck, LineChart } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Label } from '@/components/ui/label';
 import {
   Dialog,
@@ -31,12 +31,8 @@ import { translations } from '@/lib/translations';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   useUser as useAuthUser,
-  useFirestore,
-  useDoc,
-  updateDocumentNonBlocking,
-  addDocumentNonBlocking,
+  useSupabase,
 } from '@/firebase';
-import { doc, collection, serverTimestamp } from 'firebase/firestore';
 import type { Plan, User } from '@/lib/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -163,7 +159,7 @@ const BUSINESS_PLANS: PlanWithPitch[] = [
 function ContactSalesDialog() {
   const { toast } = useToast();
   const { user: authUser } = useAuthUser();
-  const firestore = useFirestore();
+  const supabase = useSupabase();
 
   const [businessName, setBusinessName] = useState('');
   const [businessEmail, setBusinessEmail] = useState('');
@@ -172,8 +168,8 @@ function ContactSalesDialog() {
   
   const isFormValid = message.trim() && businessName.trim() && businessEmail.trim();
 
-  const handleSubmit = () => {
-    if (!isFormValid || !authUser || !firestore) {
+  const handleSubmit = async () => {
+    if (!isFormValid || !authUser || !supabase) {
       toast({
         variant: 'destructive',
         title: 'Error',
@@ -182,23 +178,25 @@ function ContactSalesDialog() {
       return;
     }
 
-    const inquiriesCollection = collection(firestore, 'salesInquiries');
-    addDocumentNonBlocking(inquiriesCollection, {
-      userId: authUser.uid,
-      userName: authUser.displayName,
+    const { error } = await supabase.from('sales_inquiries').insert({
+      userId: authUser.id,
+      userName: authUser.user_metadata.full_name,
       userEmail: authUser.email,
       businessName,
       businessEmail,
       phoneNumber,
       message,
-      createdAt: serverTimestamp(),
     });
-
-    toast({
-      title: 'Message Sent',
-      description:
-        'Our sales team has received your message and will be in touch shortly.',
-    });
+    
+    if (error) {
+      toast({ variant: 'destructive', title: 'Error sending message', description: error.message });
+    } else {
+      toast({
+        title: 'Message Sent',
+        description:
+          'Our sales team has received your message and will be in touch shortly.',
+      });
+    }
   };
 
   return (
@@ -422,10 +420,24 @@ function BillingPageInternal() {
   const { language } = useLanguage();
   const t = translations[language];
   const { user: authUser, isUserLoading } = useAuthUser();
-  const firestore = useFirestore();
+  const supabase = useSupabase();
+  const [user, setUser] = useState<User | null>(null);
+  const [isUserDocLoading, setIsUserDocLoading] = useState(true);
 
-  const userDocRef = useMemo(() => authUser?.uid ? doc(firestore, 'users', authUser.uid) : null, [authUser?.uid, firestore]);
-  const { data: user, isLoading: isUserDocLoading } = useDoc<User>(userDocRef);
+  useEffect(() => {
+    if (!authUser) {
+      setIsUserDocLoading(false);
+      return;
+    }
+    const fetchUser = async () => {
+      setIsUserDocLoading(true);
+      const { data, error } = await supabase.from('users').select('*').eq('id', authUser.id).single();
+      if (data) setUser(data as User);
+      setIsUserDocLoading(false);
+    };
+    fetchUser();
+  }, [authUser, supabase]);
+
 
   const isLoading = isUserLoading || isUserDocLoading;
 
@@ -436,22 +448,34 @@ function BillingPageInternal() {
   const currentPlanId = user?.subscription?.planId;
   const isUserLoggedIn = !!authUser;
 
-  const handleUpgrade = (plan: Plan) => {
-    if (!userDocRef) {
+  const handleUpgrade = async (plan: Plan) => {
+    if (!authUser) {
       toast({ variant: "destructive", title: "Error", description: "You must be logged in to upgrade your plan." });
       return;
     }
-    updateDocumentNonBlocking(userDocRef, { 'subscription.planId': plan.id });
-    toast({ title: "Upgrade Successful!", description: `You are now on the ${plan.name} plan.` });
+    const { error } = await supabase.from('users').update({ subscription: { planId: plan.id } }).eq('id', authUser.id);
+    
+    if (error) {
+        toast({ variant: 'destructive', title: "Upgrade Failed", description: error.message });
+    } else {
+        setUser(prev => prev ? ({...prev, subscription: { planId: plan.id }}) : null);
+        toast({ title: "Upgrade Successful!", description: `You are now on the ${plan.name} plan.` });
+    }
   };
   
-  const handlePurchaseVerification = () => {
-    if (!userDocRef) {
+  const handlePurchaseVerification = async () => {
+    if (!authUser) {
       toast({ variant: "destructive", title: "Error", description: "You must be logged in to purchase verification." });
       return;
     }
-    updateDocumentNonBlocking(userDocRef, { 'isSentrybaseVerified': true });
-    toast({ title: "Verification Successful!", description: "You are now a Sentrybase Verified member." });
+     const { error } = await supabase.from('users').update({ isSentrybaseVerified: true }).eq('id', authUser.id);
+
+     if(error) {
+        toast({ variant: 'destructive', title: 'Purchase Failed', description: error.message });
+     } else {
+        setUser(prev => prev ? ({...prev, isSentrybaseVerified: true}) : null);
+        toast({ title: "Verification Successful!", description: "You are now a Sentrybase Verified member." });
+     }
   };
   
   const DonationCard = () => (

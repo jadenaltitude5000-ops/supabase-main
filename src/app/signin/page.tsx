@@ -12,9 +12,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { ClientOnly } from "@/components/layout/client-only";
 import { Loader2 } from "lucide-react";
-import { useAuth, useFirestore, useUser } from "@/firebase";
-import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, UserCredential, AuthErrorCodes, sendPasswordResetEmail, fetchSignInMethodsForEmail } from "firebase/auth";
-import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
+import { useSupabase, useUser } from "@/firebase";
+import { AuthError, AuthResponse, UserCredential } from "@supabase/supabase-js";
 import { useContext, useEffect, useState } from "react";
 import { LoadingLink } from "@/components/layout/loading-link";
 import { LoadingContext } from "@/context/loading-context";
@@ -31,27 +30,14 @@ const passwordResetSchema = z.object({
 type SigninFormValues = z.infer<typeof signinSchema>;
 type PasswordResetFormValues = z.infer<typeof passwordResetSchema>;
 
-function getAuthErrorMessage(errorCode: string): string {
-    switch (errorCode) {
-        case AuthErrorCodes.INVALID_LOGIN_CREDENTIALS:
-            return "Invalid email or password. Please check your credentials and try again.";
-        case AuthErrorCodes.USER_DELETED:
-            return "This user account has been deleted.";
-        case AuthErrorCodes.USER_DISABLED:
-            return "This user account has been disabled.";
-        case AuthErrorCodes.NETWORK_REQUEST_FAILED:
-            return "Network error. Please check your internet connection.";
-        case "auth/popup-blocked":
-            return "The sign-in popup was blocked by your browser. Please allow popups for this site and try again.";
-        case "auth/popup-closed-by-user":
-            return "The sign-in process was canceled. Please try again if this was unintentional.";
-        case "auth/cancelled-popup-request":
-            return "The sign-in process was canceled. Please try again if this was unintentional.";
-        case "auth/unauthorized-domain":
-            return "This domain is not authorized for OAuth operations. Please go to the Firebase Console -> Authentication -> Settings -> Authorized Domains and add this domain.";
-        default:
-            return "An unexpected error occurred. Please try again later.";
+function getAuthErrorMessage(error: AuthError): string {
+    if (error.message.includes("Invalid login credentials")) {
+        return "Invalid email or password. Please check your credentials and try again.";
     }
+     if (error.message.includes("Email not confirmed")) {
+        return "Please confirm your email address before signing in. Check your inbox for a confirmation link.";
+    }
+    return error.message || "An unexpected error occurred. Please try again later.";
 }
 
 function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
@@ -69,8 +55,7 @@ function SigninPageInternal() {
   const { toast } = useToast();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const auth = useAuth();
-  const firestore = useFirestore();
+  const supabase = useSupabase();
   const { user, isUserLoading } = useUser();
   const { showLoader, hideLoader } = useContext(LoadingContext);
   
@@ -88,35 +73,14 @@ function SigninPageInternal() {
 
   const { handleSubmit, control, formState: { isSubmitting } } = form;
 
-  const handleAuthSuccess = async (userCredential: UserCredential) => {
-    if (!firestore) return;
-    
-    const user = userCredential.user;
-    const userDocRef = doc(firestore, "users", user.uid);
-    const userDoc = await getDoc(userDocRef);
-
-    if (!userDoc.exists()) {
-       const userProfileData = {
-          id: user.uid,
-          name: user.displayName || 'Sentrybase User',
-          handle: user.email?.split('@')[0] || `user${user.uid.substring(0,5)}`,
-          email: user.email,
-          headline: "New Sentrybase Member",
-          bio: "Just joined Sentrybase! Looking forward to connecting.",
-          avatar: user.photoURL || `https://i.pravatar.cc/150?u=${user.uid}`,
-          skills: [],
-          portfolio: [],
-          category: 'other',
-          reliabilityScore: 75,
-          communityStanding: "New Member",
-          disputes: 0,
-          createdAt: serverTimestamp(),
-          vectors: {},
-          following: [],
-          followers: [],
-          experience_years: 0,
-      };
-      await setDoc(userDocRef, userProfileData, { merge: true });
+  const handleAuthSuccess = async (response: AuthResponse) => {
+    if (response.error) {
+         toast({
+            variant: "destructive",
+            title: "Sign-in Failed",
+            description: getAuthErrorMessage(response.error),
+        });
+        return;
     }
     
     toast({
@@ -137,75 +101,52 @@ function SigninPageInternal() {
   }, [user, isUserLoading, router, searchParams]);
 
   const onSubmit: SubmitHandler<SigninFormValues> = async (data) => {
-    if (!auth) {
-        toast({ variant: "destructive", title: "Sign-in Failed", description: "Firebase Auth not available."});
-        return;
-    }
-    
-    try {
-        const methods = await fetchSignInMethodsForEmail(auth, data.email);
-
-        if (methods.includes('google.com') && !methods.includes('password')) {
-            toast({
-                variant: "destructive",
-                title: "Sign-in Method Error",
-                description: "This email address was used with Google Sign-In. Please use the 'Sign in with Google' button.",
-            });
-            return;
-        }
-
-        const userCredential = await signInWithEmailAndPassword(auth, data.email, data.password);
-        await handleAuthSuccess(userCredential);
-
-    } catch (error: any) {
-      console.error("Sign-in failed:", error);
-      toast({
-        variant: "destructive",
-        title: "Sign-in Failed",
-        description: getAuthErrorMessage(error.code),
-      });
-    }
+    showLoader('Signing in...');
+    const response = await supabase.auth.signInWithPassword({
+        email: data.email,
+        password: data.password,
+    });
+    await handleAuthSuccess(response);
+    hideLoader();
   };
   
   const handlePasswordReset: SubmitHandler<PasswordResetFormValues> = async (data) => {
-    if (!auth) {
-        toast({ variant: "destructive", title: "Error", description: "Authentication service not available." });
-        return;
-    }
-    try {
-        await sendPasswordResetEmail(auth, data.email);
-        toast({
-            title: "Password Reset Email Sent",
-            description: "Please check your inbox for instructions to reset your password.",
-        });
-        setView('signin');
-    } catch (error: any) {
+    const { error } = await supabase.auth.resetPasswordForEmail(data.email, {
+        redirectTo: `${window.location.origin}/password-reset`,
+    });
+
+    if(error) {
         toast({
             variant: "destructive",
             title: "Error Sending Reset Email",
             description: "Could not send password reset email. Please check the email address and try again.",
         });
+    } else {
+        toast({
+            title: "Password Reset Email Sent",
+            description: "Please check your inbox for instructions to reset your password.",
+        });
+        setView('signin');
     }
   };
 
-  const handleGoogleSignIn = () => {
-    if (!auth) return;
-    const provider = new GoogleAuthProvider();
+  const handleGoogleSignIn = async () => {
     showLoader('Authenticating...');
-    signInWithPopup(auth, provider)
-      .then(handleAuthSuccess)
-      .catch((error: any) => {
-        console.error("Google Sign-in failed:", error);
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      }
+    });
+    if (error) {
         toast({
           variant: "destructive",
           title: "Google Sign-in Failed",
-          description: getAuthErrorMessage(error.code),
+          description: getAuthErrorMessage(error),
           duration: 9000,
         });
-      })
-      .finally(() => {
-        hideLoader();
-      });
+    }
+    hideLoader();
   };
   
   if (isUserLoading || user) {
