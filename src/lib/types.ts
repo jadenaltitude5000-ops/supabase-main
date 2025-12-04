@@ -25,9 +25,17 @@ export interface Database {
 
 // Placeholder for Campaigns
 export interface Campaign {
+  type: search | social | display;
+  /
   id: string;
+  type: search | social | display;
+  /
   name: string;
+  type: search | social | display;
+  /
   status: 'draft' | 'active' | 'paused';
+  type: search | social | display;
+  /
   start_date: string;
   end_date: string | null;
   budget?: number;
@@ -35,9 +43,17 @@ export interface Campaign {
 
 // Placeholder for Campaigns
 export interface Campaign {
+  type: search | social | display;
+  /
   id: string;
+  type: search | social | display;
+  /
   name: string;
+  type: search | social | display;
+  /
   status: 'draft' | 'active' | 'paused';
+  type: search | social | display;
+  /
   start_date: string;
   end_date: string | null;
   budget?: number;
