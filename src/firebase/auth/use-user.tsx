@@ -1,35 +1,54 @@
+import { useContext, useEffect, useState } from 'react';
+import { User, AuthError } from '@supabase/supabase-js';
+import { supabase } from '@/lib/supabase-client';
+import { Database } from '@/lib/types'; // Our combined user type
 
-'use client';
-
-import { useContext } from 'react';
-import { User } from 'firebase/auth';
-import { FirebaseContext } from '../provider';
-
-export interface UserHookResult {
-  user: User | null;
-  isUserLoading: boolean;
-  userError: Error | null;
+// Define the shape of our authentication context
+interface AuthContextType {
+  user: (Database['public']['Tables']['users']['Row'] | null);
+  loading: boolean;
 }
 
-/**
- * A hook that provides the current Firebase user's authentication state.
- *
- * It must be used within a descendant of FirebaseProvider.
- *
- * @returns An object containing the user, loading state, and any error.
- * @deprecated Import `useUser` directly from `@/firebase/provider` instead.
- */
-export function useUser(): UserHookResult {
-  const context = useContext(FirebaseContext);
+// Create the context
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Custom hook to consume the context
+export function useUser() {
+  const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useUser must be used within a FirebaseProvider.');
+    throw new Error('useUser must be used within an AuthProvider');
   }
-  
-  // Return the user state directly from the context
-  return {
-    user: context.user,
-    isUserLoading: context.isUserLoading,
-    userError: context.userError,
-  };
+  return context;
+}
+
+// The provider component that will wrap our app
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<Database['public']['Tables']['users']['Row'] | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Get the initial session
+    const getSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setUser(session?.user ?? null);
+      setLoading(false);
+    };
+
+    getSession();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (_event, session) => {
+        setUser(session?.user ?? null);
+        setLoading(false);
+      }
+    );
+
+    // Cleanup the subscription when the component unmounts
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const value = { user, loading };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
