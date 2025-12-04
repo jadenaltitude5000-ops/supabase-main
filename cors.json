@@ -1,0 +1,22 @@
+[
+  {
+    "origin": [
+      "http://localhost:3000",
+      "https://localhost:3000",
+      "https://studio--sentrysite-75562531-656a3.us-central1.hosted.app"
+    ],
+    "method": [
+      "GET",
+      "POST",
+      "PUT",
+      "OPTIONS",
+      "DELETE"
+    ],
+    "header": [
+      "Content-Type",
+      "Authorization",
+      "X-Goog-Upload-Protocol"
+    ],
+    "maxAgeSeconds": 3600
+  }
+]

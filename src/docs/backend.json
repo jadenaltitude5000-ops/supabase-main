@@ -1,0 +1,776 @@
+
+
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "type": "object",
+      "description": "A user profile in the application.",
+      "properties": {
+        "id": { "type": "string", "description": "Unique user ID from Firebase Auth." },
+        "uid": { "type": "string", "description": "Unique user ID from Firebase Auth." },
+        "displayName": { "type": "string", "description": "User's full display name." },
+        "email": { "type": "string", "format": "email", "description": "User's email address." },
+        "name": { "type": "string", "description": "User's full display name." },
+        "handle": { "type": "string", "description": "User's unique @handle." },
+        "headline": { "type": "string", "description": "A short, professional headline." },
+        "bio": { "type": "string", "description": "A longer user biography." },
+        "motto": { "type": "string", "description": "A short, personal philosophy or motto." },
+        "avatar": { "type": "string", "format": "uri", "description": "URL to the user's avatar image." },
+        "coverImage": { "type": "string", "format": "uri", "description": "URL to the user's profile cover image." },
+        "photoURL": { "type": "string", "format": "uri", "description": "URL to the user's avatar image." },
+        "phoneNumber": { "type": "string", "description": "User's phone number." },
+        "skills": { "type": "array", "items": { "type": "string" } },
+        "portfolio": { "type": "array", "items": { "$ref": "#/entities/PortfolioItem" } },
+        "documents": { "type": "array", "items": { "$ref": "#/entities/DocumentItem" } },
+        "experiences": { "type": "array", "items": { "$ref": "#/entities/Experience" } },
+        "certifications": { "type": "array", "items": { "$ref": "#/entities/Certification" } },
+        "courses": { "type": "array", "items": { "type": "string" }, "description": "List of course IDs created by the user." },
+        "followers": { "type": "array", "items": { "type": "string" }, "description": "List of user IDs who follow this user." },
+        "following": { "type": "array", "items": { "type": "string" }, "description": "List of user IDs this user follows." },
+        "followerCount": { "type": "number", "description": "Total number of followers." },
+        "followingCount": { "type": "number", "description": "Total number of users this user is following." },
+        "postCount": { "type": "number", "description": "Total number of posts created by the user." },
+        "reliabilityScore": { "type": "number" },
+        "communityStanding": { "type": "string" },
+        "disputes": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "vectors": { "type": "object" },
+        "onlineStatus": {
+          "type": "object",
+          "properties": {
+            "status": { "type": "string", "enum": ["online", "offline"] },
+            "lastSeen": { "type": "string", "format": "date-time" }
+          }
+        },
+        "category": { "type": "string", "description": "The user's primary work category (e.g., design, development)." },
+        "jobTitle": { "type": "string", "description": "User's current job title." },
+        "company": { "type": "string", "description": "User's current company." },
+        "location": { "type": "string", "description": "User's location." },
+        "pronouns": { "type": "string", "description": "User's pronouns." },
+        "interests": { "type": "array", "items": { "type": "string" }, "description": "User's interests and hobbies." },
+        "experience_years": { "type": "number", "description": "User's years of professional experience." },
+        "education": { "type": "string", "description": "User's educational background." },
+        "currentMeetingId": { "type": "string" },
+        "isHandRaised": { "type": "boolean" },
+        "isMuted": { "type": "boolean" },
+        "isCameraOff": { "type": "boolean" },
+        "freelancerProfile": { "$ref": "#/entities/FreelancerProfile" },
+        "businessProfile": { "$ref": "#/entities/BusinessProfile" },
+        "isInstructor": { "type": "boolean", "description": "Whether the user is an approved instructor." },
+        "isAdmin": { "type": "boolean", "description": "Whether the user has admin privileges." },
+        "isSentrybaseVerified": { "type": "boolean", "description": "Whether the user has a purchased Sentrybase verification badge." },
+        "businessCardBackground": { "type": "string", "description": "URL or class for business card background" },
+        "externalUrl": { "type": "string", "format": "uri", "description": "External portfolio or website link" },
+        "externalUrlName": { "type": "string", "description": "The display name for the external URL." },
+        "businessCardStealth": { "type": "boolean", "description": "Whether the business card is visible only to connections" },
+        "fcmTokens": { "type": "array", "items": { "type": "string" }, "description": "Firebase Cloud Messaging tokens for push notifications." },
+        "referredBy": { "type": "string", "description": "The ID of the user who referred this user." }
+      },
+      "required": ["id", "email", "name", "handle", "createdAt", "category"]
+    },
+    "Follow": {
+        "title": "Follow",
+        "type": "object",
+        "properties": {
+            "timestamp": { "type": "string", "format": "date-time" }
+        },
+        "required": ["timestamp"]
+    },
+    "FreelancerProfile": {
+      "title": "Freelancer Profile",
+      "type": "object",
+      "description": "Specific details for a user's freelance offerings.",
+      "properties": {
+        "title": { "type": "string", "description": "Professional title for freelance work." },
+        "skills": { "type": "array", "items": { "type": "string" }, "description": "Specialized skills for freelancing." },
+        "hourlyRate": { "type": "number", "description": "Standard hourly rate." },
+        "availability": { "type": "string", "enum": ["full-time", "part-time", "contract", "unavailable"], "description": "Current availability for new work." },
+        "specializedNiches": { "type": "array", "items": { "type": "string" }, "description": "Specific areas of expertise within a broader category." },
+        "advancedTraits": { "type": "array", "items": { "type": "string" }, "description": "Soft skills, work styles, and seniority level." }
+      }
+    },
+    "BusinessProfile": {
+      "title": "Business Profile",
+      "type": "object",
+      "description": "Specific details for a business account.",
+      "properties": {
+        "companyName": { "type": "string" },
+        "companySize": { "type": "string", "enum": ["1-10", "11-50", "51-200", "201-1000", "1000+"] },
+        "hiringGoals": { "type": "string", "description": "A summary of the types of talent the business is looking for." },
+        "industry": { "type": "string" }
+      }
+    },
+    "PortfolioItem": {
+        "title": "Portfolio Item",
+        "type": "object",
+        "description": "A single item in a user's portfolio.",
+        "properties": {
+            "title": { "type": "string" },
+            "description": { "type": "string" },
+            "imageUrl": { "type": "string", "format": "uri" },
+            "videoUrl": { "type": "string", "format": "uri" },
+            "tags": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["title", "description", "imageUrl", "tags"]
+    },
+    "DocumentItem": {
+        "title": "Document Item",
+        "type": "object",
+        "description": "A single document like a CV or report.",
+        "properties": {
+            "title": { "type": "string" },
+            "fileUrl": { "type": "string", "format": "uri" },
+            "fileType": { "type": "string", "enum": ["pdf", "doc", "docx", "txt"] },
+            "uploadedAt": { "type": "string", "format": "date-time" }
+        },
+        "required": ["title", "fileUrl", "fileType", "uploadedAt"]
+    },
+    "Experience": {
+      "title": "Experience",
+      "type": "object",
+      "description": "A single work experience item.",
+      "properties": {
+        "title": { "type": "string" },
+        "company": { "type": "string" },
+        "startDate": { "type": "string", "format": "date" },
+        "endDate": { "type": "string", "format": "date" },
+        "description": { "type": "string" }
+      },
+      "required": ["title", "company", "startDate"]
+    },
+    "Certification": {
+      "title": "Certification",
+      "type": "object",
+      "description": "A single certification or award.",
+      "properties": {
+        "name": { "type": "string" },
+        "issuingOrganization": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "credentialUrl": { "type": "string", "format": "uri" }
+      },
+      "required": ["name", "issuingOrganization", "date"]
+    },
+    "Post": {
+      "title": "Post",
+      "type": "object",
+      "description": "A single post made by a user.",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string", "description": "The ID of the user who created the post." },
+        "content": { "type": "string" },
+        "image": { "type": "string", "format": "uri", "description": "URL to an image attached to the post." },
+        "type": { "type": "string", "enum": ["default", "job_opportunity", "repost"]},
+        "createdAt": { "type": "string", "format": "date-time" },
+        "voteCount": { "type": "number", "description": "Net score of upvotes minus downvotes." },
+        "replyCount": { "type": "number", "description": "Denormalized count of comments." },
+        "author": {
+          "type": "object",
+          "description": "Denormalized author data for quick display.",
+          "properties": {
+            "id": { "type": "string" },
+            "name": { "type": "string" },
+            "handle": { "type": "string" },
+            "avatar": { "type": "string", "format": "uri" }
+          }
+        },
+        "replies": { "type": "array", "items": { "$ref": "#/entities/Post" } },
+        "originalPost": {
+          "type": "object",
+          "properties": {
+            "id": { "type": "string" },
+            "authorName": { "type": "string" },
+            "authorHandle": { "type": "string" }
+          }
+        },
+        "jobDetails": {
+            "type": "object",
+            "properties": {
+                "title": { "type": "string" },
+                "budget": { "type": "string" },
+                "keywords": { "type": "array", "items": { "type": "string" } }
+            }
+        }
+      },
+      "required": ["userId", "content", "createdAt", "author"]
+    },
+    "Job": {
+        "title": "Job",
+        "type": "object",
+        "description": "A record of a job/gig a user has either created or applied to.",
+        "properties": {
+            "gigId": { "type": "string" },
+            "gigTitle": { "type": "string" },
+            "gigOwnerId": { "type": "string" },
+            "status": { "type": "string", "enum": ["posted", "applied", "in-progress", "completed", "cancelled"] },
+            "createdAt": { "type": "string", "format": "date-time" },
+            "appliedAt": { "type": "string", "format": "date-time" }
+        },
+        "required": ["gigId", "gigTitle", "gigOwnerId", "status"]
+    },
+    "Task": {
+      "title": "Task",
+      "type": "object",
+      "description": "A single task within a workspace or meeting.",
+      "properties": {
+        "id": { "type": "string" },
+        "description": { "type": "string" },
+        "assigneeId": { "type": "string" },
+        "status": { "type": "string", "enum": ["todo", "in-progress", "done"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["description", "status", "createdAt"]
+    },
+    "Meeting": {
+        "title": "Meeting",
+        "type": "object",
+        "description": "A virtual meeting with assigned rooms.",
+        "properties": {
+            "id": { "type": "string" },
+            "title": { "type": "string" },
+            "description": { "type": "string" },
+            "hostId": { "type": "string" },
+            "participantIds": { "type": "array", "items": { "type": "string" } },
+            "status": { "type": "string", "enum": ["lobby", "active", "ended"] },
+            "joinCode": { "type": "string" },
+            "createdAt": { "type": "string", "format": "date-time" },
+            "settings": {
+                "type": "object",
+                "properties": {
+                    "lockMeeting": { "type": "boolean" },
+                    "allowScreenShare": { "type": "boolean" }
+                }
+            }
+        },
+        "required": ["title", "hostId", "participantIds", "status", "joinCode", "createdAt"]
+    },
+    "AgendaItem": {
+        "title": "Agenda Item",
+        "type": "object",
+        "description": "A single agenda item for a meeting.",
+        "properties": {
+            "id": { "type": "string" },
+            "title": { "type": "string" },
+            "durationMinutes": { "type": "number" },
+            "presenterId": { "type": "string" },
+            "isCompleted": { "type": "boolean" }
+        },
+        "required": ["title", "durationMinutes"]
+    },
+    "MinuteItem": {
+        "title": "Minute Item",
+        "type": "object",
+        "description": "A single minute/note taken during a meeting.",
+        "properties": {
+            "id": { "type": "string" },
+            "authorId": { "type": "string" },
+            "content": { "type": "string" },
+            "linkedAgendaItemId": { "type": "string" },
+            "timestamp": { "type": "string", "format": "date-time" }
+        },
+        "required": ["authorId", "content", "timestamp"]
+    },
+    "AgencyMetricReport": {
+      "title": "Agency Metric Report",
+      "type": "object",
+      "description": "A periodic report of an agency's key performance indicators.",
+      "properties": {
+          "createdAt": { "type": "string", "format": "date-time" },
+          "period": { "type": "string", "enum": ["daily", "weekly", "monthly"] },
+          "projectTurnaroundTime": { "type": "number" },
+          "resourceUtilizationRate": { "type": "number" },
+          "taskCompletionRate": { "type": "number" },
+          "totalBillableHours": { "type": "number" },
+          "outputPerEmployee": { "type": "number" },
+          "onTimeDeliveryRate": { "type": "number" },
+          "workflowBottlenecks": { "type": "number" },
+          "automationRate": { "type": "number" },
+          "profitMargin": { "type": "number" },
+          "revenuePerEmployee": { "type": "number" },
+          "avgCostPerProject": { "type": "number" },
+          "clientRetentionRate": { "type": "number" },
+          "clientAcquisitionCost": { "type": "number" },
+          "clientLifetimeValue": { "type": "number" },
+          "errorRate": { "type": "number" },
+          "clientSatisfaction": { "type": "number" },
+          "netPromoterScore": { "type": "number" }
+      },
+      "required": ["createdAt", "period"]
+    },
+    "DailyProductivityData": {
+      "title": "Daily Productivity Data",
+      "type": "object",
+      "properties": {
+        "day": { "type": "string" }, "projects": { "type": "number" }, "revenue": { "type": "number" }, "rating": { "type": "number" }, "impressions": { "type": "number" }, "acquisition": { "type": "number" }, "revPerProject": { "type": "number" }
+      }
+    },
+     "WeeklyProductivityData": {
+      "title": "Weekly Productivity Data",
+      "type": "object",
+      "properties": {
+        "week": { "type": "string" }, "projects": { "type": "number" }, "revenue": { "type": "number" }, "rating": { "type": "number" }, "impressions": { "type": "number" }, "acquisition": { "type": "number" }, "revPerProject": { "type": "number" }
+      }
+    },
+     "MonthlyProductivityData": {
+      "title": "Monthly Productivity Data",
+      "type": "object",
+      "properties": {
+        "month": { "type": "string" }, "projects": { "type": "number" }, "revenue": { "type": "number" }, "rating": { "type": "number" }, "impressions": { "type": "number" }, "acquisition": { "type": "number" }, "revPerProject": { "type": "number" }
+      }
+    },
+    "DailyProfileEngagementData": {
+        "title": "Daily Profile Engagement Data", "type": "object", "properties": { "day": {"type": "string"}, "views": {"type": "number"}, "connections": {"type": "number"}, "searches": {"type": "number"}, "likes": {"type": "number"}, "skillSyncNetMatches": {"type": "number"} }
+    },
+    "WeeklyProfileEngagementData": {
+        "title": "Weekly Profile Engagement Data", "type": "object", "properties": { "week": {"type": "string"}, "views": {"type": "number"}, "connections": {"type": "number"}, "searches": {"type": "number"}, "likes": {"type": "number"}, "skillSyncNetMatches": {"type": "number"} }
+    },
+    "MonthlyProfileEngagementData": {
+        "title": "Monthly Profile Engagement Data", "type": "object", "properties": { "month": {"type": "string"}, "views": {"type": "number"}, "connections": {"type": "number"}, "searches": {"type": "number"}, "likes": {"type": "number"}, "skillSyncNetMatches": {"type": "number"} }
+    },
+    "Invoice": {
+      "title": "Invoice", "type": "object", "properties": { "id": {"type": "string"}, "date": {"type": "string"}, "amount": {"type": "string"}, "status": {"type": "string", "enum": ["Paid", "Pending", "Failed"] } }
+    },
+    "PaymentMethod": {
+      "title": "Payment Method", "type": "object", "properties": { "id": {"type": "string"}, "type": {"type": "string", "enum": ["visa", "mastercard", "paypal"]}, "details": {"type": "string"}, "expiry": {"type": "string"}, "isDefault": {"type": "boolean"} }
+    },
+    "Referral": {
+      "title": "Referral", "type": "object",
+      "properties": { "id": {"type": "string"}, "name": {"type": "string"}, "date": {"type": "string"}, "status": {"type": "string", "enum": ["Subscribed", "Joined", "Pending"]}, "reward": {"type": "string"} }
+    },
+    "Plan": {
+      "title": "Plan",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "price": { "type": "string" },
+        "features": { "type": "array", "items": { "type": "string" } },
+        "isCurrent": { "type": "boolean" },
+        "bestFor": { "type": "string" }
+      },
+      "seed": {
+        "plan-essential": { "name": "Essential", "price": "$0", "features": ["Free Mainstream access", "Provisional algorithm boost for first 48hrs"] },
+        "plan-standard": { "name": "Standard", "price": "$12", "features": ["All Essential features", "Enhanced algorithm visibility", "Advanced profile analytics"], "bestFor": "Individual freelancers and creatives" },
+        "plan-pro": { "name": "Pro", "price": "$29", "features": ["All Standard features", "SkillSyncNet priority matching", "Workmate Radar advanced filters", "Unlimited proposals"], "bestFor": "Power users and established professionals" },
+        "plan-enterprise": { "name": "Enterprise", "price": "Custom", "features": ["All Pro features", "Team management & billing", "Dedicated account manager", "API access"], "bestFor": "Agencies and teams" }
+      }
+    },
+    "Campaign": {
+        "title": "Campaign", "type": "object", "properties": { "id": {"type": "string"}, "name": {"type": "string"}, "status": {"type": "string", "enum": ["Active", "Paused", "Finished"]}, "type": {"type": "string"}, "spend": {"type": "string"}, "conversions": {"type": "number"}}
+    },
+    "Bookmark": {
+      "title": "Bookmark",
+      "type": "object",
+      "description": "A user's saved item (user, post, or job).",
+      "properties": {
+        "type": { "type": "string", "enum": ["user", "post", "job"], "description": "The type of item being bookmarked." },
+        "refId": { "type": "string", "description": "The ID of the saved user, post, or job." },
+        "savedAt": { "type": "string", "format": "date-time" },
+        "content": {
+            "type": "object",
+            "description": "Denormalized content for quick display in the bookmarks list.",
+            "properties": {
+                "title": { "type": "string" },
+                "description": { "type": "string" },
+                "image": { "type": "string", "format": "uri" }
+            }
+        }
+      },
+      "required": ["type", "refId", "savedAt"]
+    },
+    "Contract": {
+        "title": "Contract",
+        "type": "object",
+        "description": "A legal contract document between parties.",
+        "properties": {
+            "title": { "type": "string" },
+            "ownerId": { "type": "string" },
+            "status": { "type": "string", "enum": ["draft", "review", "signed", "archived"] },
+            "createdAt": { "type": "string", "format": "date-time" },
+            "updatedAt": { "type": "string", "format": "date-time" }
+        },
+        "required": ["title", "ownerId", "status", "createdAt", "updatedAt"]
+    },
+    "ContractParty": {
+        "title": "Contract Party",
+        "type": "object",
+        "description": "A party or stakeholder involved in a contract.",
+        "properties": {
+            "name": { "type": "string" },
+            "email": { "type": "string", "format": "email" },
+            "role": { "type": "string", "enum": ["owner", "editor", "viewer", "signer"] },
+            "userId": { "type": "string", "description": "The Sentrybase user ID, if they are on the platform." },
+            "signatureStatus": { "type": "string", "enum": ["pending", "signed"] },
+            "signedAt": { "type": "string", "format": "date-time" }
+        },
+        "required": ["name", "email", "role", "signatureStatus"]
+    },
+    "ContractVersion": {
+        "title": "Contract Version",
+        "type": "object",
+        "description": "A specific version snapshot of a contract's content.",
+        "properties": {
+            "content": { "type": "string", "description": "The full content of the contract at this version." },
+            "versionNumber": { "type": "number" },
+            "authorId": { "type": "string" },
+            "createdAt": { "type": "string", "format": "date-time" },
+            "notes": { "type": "string", "description": "Notes about the changes in this version." }
+        },
+        "required": ["content", "versionNumber", "authorId", "createdAt"]
+    },
+    "Notification": {
+        "title": "Notification",
+        "type": "object",
+        "description": "An in-app notification for a user.",
+        "properties": {
+            "id": { "type": "string" },
+            "type": { "type": "string", "enum": ["system", "connection", "job_application", "project_invite"] },
+            "title": { "type": "string" },
+            "description": { "type": "string" },
+            "createdAt": { "type": "string", "format": "date-time" },
+            "isRead": { "type": "boolean" },
+            "link": { "type": "string", "format": "uri" },
+            "metadata": { 
+                "type": "object", 
+                "properties": {
+                    "invitationId": { "type": "string" },
+                    "projectId": { "type": "string" },
+                    "applicantId": { "type": "string" },
+                    "applicantName": { "type": "string" },
+                    "applicantMotivation": { "type": "string" },
+                    "applicantAge": { "type": "number" },
+                    "gigId": { "type": "string" },
+                    "gigTitle": { "type": "string" }
+                }
+            }
+        },
+        "required": ["id", "type", "title", "description", "createdAt", "isRead"]
+    },
+    "SalesInquiry": {
+      "title": "Sales Inquiry",
+      "type": "object",
+      "description": "A request submitted through the 'Contact Sales' form.",
+      "properties": {
+        "userId": { "type": "string", "description": "The ID of the user submitting the inquiry." },
+        "userName": { "type": "string" },
+        "userEmail": { "type": "string", "format": "email" },
+        "businessName": { "type": "string" },
+        "businessEmail": { "type": "string", "format": "email" },
+        "phoneNumber": { "type": "string" },
+        "message": { "type": "string", "description": "The content of the user's message." },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "userName", "userEmail", "businessName", "businessEmail", "message", "createdAt"]
+    },
+    "Course": {
+      "title": "Course",
+      "type": "object",
+      "description": "A single educational course in the marketplace.",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "thumbnailUrl": { "type": "string", "format": "uri" },
+        "instructorId": { "type": "string" },
+        "instructorName": { "type": "string" },
+        "instructorAvatar": { "type": "string", "format": "uri" },
+        "price": { "type": "number" },
+        "tags": { "type": "array", "items": { "type": "string" } },
+        "level": { "type": "string", "enum": ["beginner", "intermediate", "advanced"] },
+        "rating": { "type": "number" },
+        "studentCount": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "title", "description", "instructorId", "price", "createdAt"]
+    },
+    "CourseModule": {
+      "title": "Course Module",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "order": { "type": "number" }
+      },
+      "required": ["id", "title", "order"]
+    },
+    "CourseLesson": {
+      "title": "Course Lesson",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "type": { "type": "string", "enum": ["video", "text"] },
+        "videoUrl": { "type": "string", "format": "uri" },
+        "textContent": { "type": "string" },
+        "duration": { "type": "number", "description": "Duration in minutes" },
+        "order": { "type": "number" }
+      },
+      "required": ["id", "title", "type", "order"]
+    },
+    "CourseEnrollment": {
+      "title": "Course Enrollment",
+      "type": "object",
+      "description": "Tracks a user's enrollment and progress in a course.",
+      "properties": {
+        "courseId": { "type": "string" },
+        "enrolledAt": { "type": "string", "format": "date-time" },
+        "progress": { "type": "number", "description": "Percentage complete" },
+        "completedLessons": { "type": "array", "items": { "type": "string" } }
+      },
+      "required": ["courseId", "enrolledAt"]
+    },
+    "CourseReview": {
+      "title": "Course Review",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "rating": { "type": "number", "minimum": 1, "maximum": 5 },
+        "comment": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "userId", "rating", "createdAt"]
+    },
+    "InstructorApplication": {
+        "title": "Instructor Application",
+        "type": "object",
+        "description": "An application from a user to become an instructor.",
+        "properties": {
+            "userId": { "type": "string" },
+            "userName": { "type": "string" },
+            "userEmail": { "type": "string", "format": "email" },
+            "motivation": { "type": "string", "description": "Why they want to teach." },
+            "expertise": { "type": "string", "description": "Area of expertise." },
+            "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
+            "submittedAt": { "type": "string", "format": "date-time" }
+        },
+        "required": ["userId", "motivation", "expertise", "status", "submittedAt"]
+    },
+    "Project": {
+      "title": "Project",
+      "type": "object",
+      "description": "A collaborative project boardroom.",
+      "properties": {
+        "id": { "type": "string" },
+        "projectName": { "type": "string" },
+        "creatorId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "isActive": { "type": "boolean" },
+        "role": { "type": "string", "enum": ["creator", "member"] }
+      },
+      "required": ["id", "projectName", "creatorId", "createdAt", "isActive"]
+    },
+    "SaaSProduct": {
+      "title": "SaaS Product",
+      "type": "object",
+      "description": "A software-as-a-service product listed on the Marketbase.",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "authorId": { "type": "string" },
+        "authorName": { "type": "string" },
+        "price": { "type": "string" },
+        "tags": { "type": "array", "items": { "type": "string" } },
+        "websiteUrl": { "type": "string", "format": "uri" }
+      },
+      "required": ["id", "name", "description", "authorId", "price", "websiteUrl"]
+    }
+  },
+  "auth": {
+    "providers": ["password", "google.com"]
+  },
+  "functions": [
+    "onUserFollow",
+    "onUserUnfollow",
+    "onLikeCreated",
+    "onLikeDeleted",
+    "onReplyCreated",
+    "onReplyDeleted",
+    "onPostCreated",
+    "onPostDeleted",
+    "onUserUpdate",
+    "onGigApplication"
+  ],
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "Stores public user profile information."
+    },
+    "/users/{userId}/jobs/{jobId}": {
+        "schema": { "$ref": "#/entities/Job" },
+        "description": "A collection of jobs the user has created or applied to."
+    },
+    "/users/{userId}/freelancerProfile/{profileId}": {
+      "schema": { "$ref": "#/entities/FreelancerProfile" },
+      "description": "Stores the user's specific freelance profile data."
+    },
+    "/users/{userId}/businessProfile/{profileId}": {
+      "schema": { "$ref": "#/entities/BusinessProfile" },
+      "description": "Stores the user's specific business profile data."
+    },
+     "/users/{userId}/bookmarks/{bookmarkId}": {
+      "schema": { "$ref": "#/entities/Bookmark" },
+      "description": "A collection of items bookmarked by the user."
+    },
+    "/users/{userId}/feed/{postId}": {
+      "schema": { "$ref": "#/entities/Post" },
+      "description": "A user's personalized feed. This is populated by a Firebase Function."
+    },
+    "/posts/{postId}": {
+      "schema": { "$ref": "#/entities/Post" },
+      "description": "Stores all posts created in the application."
+    },
+    "/posts/{postId}/replies/{replyId}": {
+      "schema": { "$ref": "#/entities/Post" },
+      "description": "Stores replies to a specific post."
+    },
+    "/votes/{voteId}": {
+      "schema": {
+        "type": "object",
+        "properties": {
+          "postId": { "type": "string" },
+          "userId": { "type": "string" },
+          "direction": { "type": "string", "enum": ["up", "down"] },
+          "timestamp": { "type": "string", "format": "date-time" }
+        }
+      },
+      "description": "Tracks a user's vote on a post. The document ID should be a composite key like `${postId}_${userId}`."
+    },
+    "/users/{userId}/following/{followingId}": {
+      "schema": { "$ref": "#/entities/Follow" },
+      "description": "A user's list of people they are following."
+    },
+    "/users/{userId}/followers/{followerId}": {
+      "schema": { "$ref": "#/entities/Follow" },
+      "description": "A user's list of people who follow them."
+    },
+    "/meetings/{meetingId}": {
+      "schema": { "$ref": "#/entities/Meeting" },
+      "description": "Stores meeting information. Access is restricted to participants."
+    },
+    "/meetings/{meetingId}/agenda/{agendaItemId}": {
+        "schema": { "$ref": "#/entities/AgendaItem" },
+        "description": "The structured agenda for a specific meeting."
+    },
+    "/meetings/{meetingId}/minutes/{minuteId}": {
+        "schema": { "$ref": "#/entities/MinuteItem" },
+        "description": "The minutes/notes taken during a meeting."
+    },
+    "/meetings/{meetingId}/tasks/{taskId}": {
+        "schema": { "$ref": "#/entities/Task" },
+        "description": "Action items or tasks created during a meeting."
+    },
+    "/users/{userId}/dailyProductivityData/{reportId}": { "schema": { "$ref": "#/entities/AgencyMetricReport" }, "description": "User's submitted daily agency metrics." },
+    "/users/{userId}/weeklyProductivityData/{reportId}": { "schema": { "$ref": "#/entities/AgencyMetricReport" }, "description": "User's submitted weekly agency metrics." },
+    "/users/{userId}/monthlyProductivityData/{reportId}": { "schema": { "$ref": "#/entities/AgencyMetricReport" }, "description": "User's submitted monthly agency metrics." },
+    "/dailyProductivityData/{dataId}": { "schema": { "$ref": "#/entities/DailyProductivityData" }, "description": "Daily productivity metrics." },
+    "/weeklyProductivityData/{dataId}": { "schema": { "$ref": "#/entities/WeeklyProductivityData" }, "description": "Weekly productivity metrics." },
+    "/monthlyProductivityData/{dataId}": { "schema": { "$ref": "#/entities/MonthlyProductivityData" }, "description": "Monthly productivity metrics." },
+    "/dailyProfileEngagementData/{dataId}": { "schema": { "$ref": "#/entities/DailyProfileEngagementData" }, "description": "Daily profile engagement metrics." },
+    "/weeklyProfileEngagementData/{dataId}": { "schema": { "$ref": "#/entities/WeeklyProfileEngagementData" }, "description": "Weekly profile engagement metrics." },
+    "/monthlyProfileEngagementData/{dataId}": { "schema": { "$ref": "#/entities/MonthlyProfileEngagementData" }, "description": "Monthly profile engagement metrics." },
+    "/users/{userId}/invoices/{invoiceId}": { "schema": { "$ref": "#/entities/Invoice" }, "description": "User's billing invoices." },
+    "/users/{userId}/paymentMethods/{methodId}": { "schema": { "$ref": "#/entities/PaymentMethod" }, "description": "User's saved payment methods." },
+    "/users/{userId}/referrals/{referralId}": { "schema": { "$ref": "#/entities/Referral" }, "description": "User's referral history." },
+    "/plans/{planId}": {
+      "schema": { "$ref": "#/entities/Plan" },
+      "description": "Available subscription plans."
+    },
+    "/users/{userId}/campaigns/{campaignId}": { "schema": { "$ref": "#/entities/Campaign" }, "description": "User's ad campaigns." },
+    "/contracts/{contractId}": {
+        "schema": { "$ref": "#/entities/Contract" },
+        "description": "The main contract document. Access controlled by parties."
+    },
+    "/contracts/{contractId}/parties/{partyId}": {
+        "schema": { "$ref": "#/entities/ContractParty" },
+        "description": "Stakeholders for a specific contract."
+    },
+    "/contracts/{contractId}/versions/{versionId}": {
+        "schema": { "$ref": "#/entities/ContractVersion" },
+        "description": "Version history for a specific contract."
+    },
+    "/users/{userId}/contracts/{contractId}": {
+        "schema": { "type": "object", "properties": { "role": { "type": "string" } } },
+        "description": "A reverse mapping to easily find all contracts a user is a party to."
+    },
+    "/users/{userId}/notifications/{notificationId}": {
+      "schema": { "$ref": "#/entities/Notification" },
+      "description": "A user's list of in-app notifications."
+    },
+    "/users/{userId}/colleagues/{colleagueId}": {
+      "schema": { "type": "object", "properties": { "addedAt": { "type": "string", "format": "date-time" } } },
+      "description": "A list of users the current user has added as a colleague from matches."
+    },
+    "/projects/{projectId}": {
+      "schema": { "$ref": "#/entities/Project" },
+      "description": "Stores the main project board room information."
+    },
+    "/projects/{projectId}/members/{memberId}": {
+      "schema": { "type": "object" },
+      "description": "A list of members for a specific project."
+    },
+    "/projects/{projectId}/messages/{messageId}": {
+      "schema": { "$ref": "#/entities/ProjectMessage" },
+      "description": "Chat messages within a project board room."
+    },
+    "/projects/{projectId}/invitations/{invitationId}": {
+      "schema": { "$ref": "#/entities/Invitation" },
+      "description": "Invitations for users to join a project."
+    },
+    "/users/{userId}/projects/{projectId}": {
+      "schema": { "$ref": "#/entities/Project" },
+      "description": "A denormalized copy of project data for efficient fetching by the user."
+    },
+    "/salesInquiries/{inquiryId}": {
+      "schema": { "$ref": "#/entities/SalesInquiry" },
+      "description": "Stores inquiries from the 'Contact Sales' form."
+    },
+    "/courses/{courseId}": {
+      "schema": { "$ref": "#/entities/Course" },
+      "description": "The main collection for all courses in the marketplace."
+    },
+    "/courses/{courseId}/modules/{moduleId}": {
+      "schema": { "$ref": "#/entities/CourseModule" },
+      "description": "Modules within a specific course."
+    },
+    "/courses/{courseId}/modules/{moduleId}/lessons/{lessonId}": {
+      "schema": { "$ref": "#/entities/CourseLesson" },
+      "description": "Individual lessons within a course module."
+    },
+    "/courses/{courseId}/reviews/{reviewId}": {
+      "schema": { "$ref": "#/entities/CourseReview" },
+      "description": "User reviews for a specific course."
+    },
+    "/users/{userId}/enrollments/{courseId}": {
+      "schema": { "$ref": "#/entities/CourseEnrollment" },
+      "description": "Tracks a user's enrollment and progress in a specific course."
+    },
+    "/instructorApplications/{applicationId}": {
+        "schema": { "$ref": "#/entities/InstructorApplication" },
+        "description": "Applications from users who want to become an instructor."
+    },
+    "/status/{userId}": {
+        "schema": {
+            "type": "object",
+            "properties": {
+                "status": { "type": "string", "enum": ["online", "offline"] },
+                "last_changed": { "type": "string", "format": "date-time" }
+            }
+        },
+        "description": "Realtime user online/offline status, typically managed by Realtime Database."
+    },
+    "/marketbase/portfolio/{itemId}": {
+        "schema": { "$ref": "#/entities/PortfolioItem" },
+        "description": "Publicly listed portfolio items in the Marketbase."
+    },
+    "/marketbase/saas/{productId}": {
+        "schema": { "$ref": "#/entities/SaaSProduct" },
+        "description": "SaaS products listed for sale or subscription in the Marketbase."
+    },
+    "/marketbase/courses/{courseId}": {
+        "schema": { "$ref": "#/entities/Course" },
+        "description": "Courses available for purchase in the Marketbase."
+    }
+  }
+}
