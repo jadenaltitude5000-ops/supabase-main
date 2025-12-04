@@ -1,154 +1,86 @@
+'use client';
 
-"use client";
-
-import React, { useState, useRef, type ReactNode } from 'react';
-import { Alert, AlertDescription, AlertTitle } from './alert';
-import { FileUp, AlertCircle, Loader2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { getFunctions, httpsCallable } from 'firebase/functions';
+import React, { useState } from 'react';
+import { supabase } from '@/lib/supabase-client'; // Adjust path if needed
 
 interface FileUploaderProps {
-  onUpload: (url: string, name: string) => void;
-  children?: ReactNode;
-  className?: string;
-  acceptedFileTypes?: string[];
-  uploadPath?: string;
+  jobId: string;
+  onUploadSuccess?: () => void;
+  onUploadError?: (error: string) => void;
 }
 
-const fileToDataUri = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => {
-            resolve((reader.result as string).split(',')[1]); // Return only base64 part
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-    });
-};
+export function FileUploader({ jobId, onUploadSuccess, onUploadError }: FileUploaderProps) {
+  const [uploading, setUploading] = useState(false);
+  const [file, setFile] = useState<File | null>(null);
 
-export function FileUploader({ 
-    onUpload, 
-    children, 
-    className, 
-    acceptedFileTypes = ['application/pdf', '.doc', '.docx', '.txt'],
-    uploadPath = 'documents'
-}: FileUploaderProps) {
-  const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files) {
+      setFile(event.target.files[0]);
+    }
+  };
 
-  const handleFileUpload = async (file: File) => {
-    if (file.size > 5 * 1024 * 1024) { // 5MB limit
-      setError("File size must be less than 5MB.");
+  const handleUpload = async () => {
+    if (!file) {
+      alert('Please select a file first.');
       return;
     }
-    
-    setError(null);
-    setIsLoading(true);
+
+    setUploading(true);
+    onUploadError?.('');
 
     try {
-        const functions = getFunctions();
-        const uploadFile = httpsCallable(functions, 'uploadFile');
+      // 1. Get the session to pass the auth token
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error('User is not authenticated.');
+      }
 
-        const fileData = await fileToDataUri(file);
-        
-        const result = await uploadFile({
-            fileData,
-            fileName: file.name,
-            fileType: file.type,
-            path: uploadPath
-        });
+      // 2. Prepare the form data for the Edge Function
+      const formData = new FormData();
+      formData.append('file', file);
+      // Note: The Edge Function expects 'job_id', 'cover_letter', 'resume_url'
+      // We are uploading the resume, so we'll call it 'resume_url'
+      formData.append('job_id', jobId);
+      formData.append('resume_url', file.name); // Or however you want to handle the file
 
-        const { downloadURL } = result.data as { downloadURL: string };
-        onUpload(downloadURL, file.name);
+      // 3. Call the Supabase Edge Function
+      const functionUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/gig-application`;
+      const response = await fetch(functionUrl, {
+        method: 'POST',
+        headers: {
+          // Pass the auth token in the Authorization header
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: formData,
+      });
 
-    } catch (err: any) {
-        console.error("Failed to upload file:", err);
-        setError(err.message || "Could not upload the file. Please try again.");
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to upload file.');
+      }
+
+      const result = await response.json();
+      console.log('Upload successful:', result);
+      onUploadSuccess?.();
+
+    } catch (error: any) {
+      console.error('Upload error:', error);
+      onUploadError?.(error.message);
     } finally {
-        setIsLoading(false);
-        if (fileInputRef.current) {
-            fileInputRef.current.value = "";
-        }
-    }
-  };
-
-  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      await handleFileUpload(file);
-    }
-  };
-
-  const handleDrop = async (event: React.DragEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    event.stopPropagation();
-    const file = event.dataTransfer.files?.[0];
-    if (file && !isLoading) {
-      await handleFileUpload(file);
-    }
-  };
-
-  const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    event.stopPropagation();
-  };
-
-  const handleButtonClick = () => {
-    if (!isLoading) {
-      fileInputRef.current?.click();
+      setUploading(false);
     }
   };
 
   return (
-    <div className={className}>
-        <div
-            onDrop={handleDrop}
-            onDragOver={handleDragOver}
-            onClick={handleButtonClick}
-            className={cn("cursor-pointer", isLoading && "cursor-not-allowed")}
-        >
-            {children ? (
-                React.cloneElement(children as React.ReactElement, {
-                    "aria-label": "Upload file",
-                    disabled: isLoading,
-                })
-            ) : (
-                <div
-                    className="w-full p-6 border-2 border-dashed rounded-md text-center hover:border-primary transition-colors"
-                >
-                    <div className="flex flex-col items-center justify-center space-y-2 text-muted-foreground">
-                        {isLoading ? (
-                            <>
-                                <Loader2 className="h-8 w-8 animate-spin" />
-                                <p className="text-sm">Processing document...</p>
-                            </>
-                        ) : (
-                            <>
-                                <FileUp className="h-8 w-8" />
-                                <p className="text-sm">Drag & drop or <span className="text-primary font-semibold">browse</span></p>
-                                <p className="text-xs">Supports PDF, DOC, TXT. Max 5MB.</p>
-                            </>
-                        )}
-                    </div>
-                </div>
-            )}
-        </div>
-      <input
-        type="file"
-        ref={fileInputRef}
-        onChange={handleFileChange}
-        className="hidden"
-        accept={acceptedFileTypes.join(',')}
-        disabled={isLoading}
-      />
-      {error && (
-        <Alert variant="destructive" className="mt-4">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Upload Error</AlertTitle>
-            <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
+    <div className="p-4 border rounded-md">
+      <input type="file" onChange={handleFileChange} className="mb-2" />
+      <button
+        onClick={handleUpload}
+        disabled={uploading || !file}
+        className="px-4 py-2 bg-blue-600 text-white rounded disabled:bg-gray-400"
+      >
+        {uploading ? 'Uploading...' : 'Upload Resume'}
+      </button>
     </div>
   );
 }
