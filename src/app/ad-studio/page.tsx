@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -42,8 +42,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { ClientOnly } from '@/components/layout/client-only';
-import { useUser, useFirestore, useUserCollection } from '@/firebase';
-import { collection, query } from 'firebase/firestore';
+import { useUser, useSupabase } from '@/firebase';
 import type { Campaign } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { adAnalyticsData } from '@/lib/ad-analytics-data';
@@ -124,16 +123,34 @@ function CreateCampaignDialog() {
 
 function AdStudioPageInternal() {
   const { user, isUserLoading } = useUser();
-  const firestore = useFirestore();
+  const supabase = useSupabase();
   const { language } = useLanguage();
   const t = translations[language];
 
-  const campaignsQuery = useMemo(() => {
-    if (!user?.uid || !firestore) return null;
-    return query(collection(firestore, 'users', user.uid, 'campaigns'));
-  }, [user?.uid, firestore]);
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const { data: campaigns, isLoading } = useUserCollection<Campaign>(campaignsQuery);
+  useEffect(() => {
+    if (!user?.id || !supabase) return;
+
+    const fetchCampaigns = async () => {
+        setIsLoading(true);
+        const { data, error } = await supabase
+            .from('campaigns')
+            .select('*')
+            .eq('user_id', user.id);
+
+        if (error) {
+            console.error("Error fetching campaigns:", error);
+            setCampaigns([]);
+        } else {
+            setCampaigns(data as Campaign[]);
+        }
+        setIsLoading(false);
+    };
+
+    fetchCampaigns();
+  }, [user?.id, supabase]);
 
   const isLoadingData = isLoading || isUserLoading;
 

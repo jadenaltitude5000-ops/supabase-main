@@ -35,11 +35,9 @@ import {
   BookOpen,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ClientOnly } from '@/components/layout/client-only';
-import { useUser, useFirestore, useUserCollection, addDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
-import type { Contract, ContractParty } from '@/lib/types';
-import { collection, query, where, documentId, getDocs, Query, serverTimestamp, doc } from 'firebase/firestore';
+import { useUser, useSupabase } from '@/firebase';
+import type { Contract } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -53,30 +51,37 @@ function CreateContractDialog({ onContractCreated }: { onContractCreated: () => 
     const [title, setTitle] = useState('');
     const [isCreating, setIsCreating] = useState(false);
     const { user: authUser } = useUser();
-    const firestore = useFirestore();
+    const supabase = useSupabase();
     const { toast } = useToast();
 
     const handleCreate = async () => {
-        if (!title.trim() || !authUser || !firestore) return;
+        if (!title.trim() || !authUser || !supabase) return;
 
         setIsCreating(true);
         try {
-            const contractsCol = collection(firestore, 'contracts');
-            const newContractRef = doc(contractsCol); // Create a reference with a new ID
+            const { data: newContract, error: contractError } = await supabase
+              .from('contracts')
+              .insert({
+                  title,
+                  owner_id: authUser.id,
+                  status: 'draft',
+              })
+              .select()
+              .single();
 
-            const newContract: Omit<Contract, 'id'> = {
-                title,
-                ownerId: authUser.uid,
-                status: 'draft',
-                createdAt: serverTimestamp(),
-                updatedAt: serverTimestamp(),
-            };
-
-            await setDocumentNonBlocking(newContractRef, newContract);
+            if (contractError) throw contractError;
 
             // Add to user's reverse mapping
-            const userContractRef = doc(firestore, 'users', authUser.uid, 'contracts', newContractRef.id);
-            await setDocumentNonBlocking(userContractRef, { role: 'owner' });
+            const { error: userContractError } = await supabase
+              .from('user_contracts')
+              .insert({
+                  user_id: authUser.id,
+                  contract_id: newContract.id,
+                  role: 'owner',
+              });
+            
+            if (userContractError) throw userContractError;
+
 
             toast({
                 title: 'Contract Created',
@@ -84,12 +89,12 @@ function CreateContractDialog({ onContractCreated }: { onContractCreated: () => 
             });
 
             onContractCreated();
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error creating contract:", error);
             toast({
                 variant: 'destructive',
                 title: 'Error',
-                description: 'Failed to create contract. Please try again.',
+                description: error.message || 'Failed to create contract. Please try again.',
             });
         } finally {
             setIsCreating(false);
@@ -181,54 +186,67 @@ Date: _______________
 
 function ContractsPageInternal() {
   const { user: authUser, isUserLoading } = useUser();
-  const firestore = useFirestore();
+  const supabase = useSupabase();
   const [contracts, setContracts] = useState<ContractWithPartyCount[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('all');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const { toast } = useToast();
 
-  const userContractsQuery = useMemo(() => {
-    if (!authUser) return null;
-    return query(collection(firestore, 'users', authUser.uid, 'contracts'));
-  }, [authUser, firestore]);
-  
-  const { data: userContracts, isLoading: isLoadingUserContracts } = useUserCollection(userContractsQuery);
-
   useEffect(() => {
     const fetchContracts = async () => {
-      if (userContracts && userContracts.length > 0 && firestore) {
-        setIsLoading(true);
-        const contractIds = userContracts.map(c => c.id);
+      if (!authUser || !supabase) {
+        setIsLoading(false);
+        return;
+      }
+      setIsLoading(true);
+
+      const { data: userContracts, error: userContractsError } = await supabase
+        .from('user_contracts')
+        .select('contract_id')
+        .eq('user_id', authUser.id);
+      
+      if (userContractsError) {
+          console.error(userContractsError);
+          setIsLoading(false);
+          return;
+      }
+
+      if (userContracts && userContracts.length > 0) {
+        const contractIds = userContracts.map(c => c.contract_id);
         
-        if (contractIds.length === 0) {
-            setContracts([]);
+        const { data: contractsData, error: contractsError } = await supabase
+            .from('contracts')
+            .select('*')
+            .in('id', contractIds);
+
+        if (contractsError) {
+            console.error(contractsError);
             setIsLoading(false);
             return;
         }
-        
-        const contractsQuery = query(collection(firestore, 'contracts'), where(documentId(), 'in', contractIds));
-        const contractsSnap = await getDocs(contractsQuery);
-        const fetchedContracts = contractsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Contract));
 
         const contractsWithPartyCount: ContractWithPartyCount[] = await Promise.all(
-          fetchedContracts.map(async (contract) => {
-            const partiesQuery = query(collection(firestore, 'contracts', contract.id, 'parties'));
-            const partiesSnap = await getDocs(partiesQuery);
-            return { ...contract, partyCount: partiesSnap.size };
+          (contractsData || []).map(async (contract: Contract) => {
+            const { count, error } = await supabase
+              .from('contract_parties')
+              .select('*', { count: 'exact', head: true })
+              .eq('contract_id', contract.id);
+            
+            return { ...contract, partyCount: count || 0 };
           })
         );
         
         setContracts(contractsWithPartyCount);
         setIsLoading(false);
-      } else if (!isLoadingUserContracts) {
+      } else {
         setContracts([]);
         setIsLoading(false);
       }
     };
 
     fetchContracts();
-  }, [userContracts, firestore, isLoadingUserContracts]);
+  }, [authUser, supabase]);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -335,7 +353,7 @@ function ContractsPageInternal() {
                             </div>
                           </TableCell>
                           <TableCell>
-                            {contract.updatedAt ? new Date((contract.updatedAt as any).seconds * 1000).toLocaleDateString() : 'N/A'}
+                            {contract.updated_at ? new Date(contract.updated_at as string).toLocaleDateString() : 'N/A'}
                           </TableCell>
                           <TableCell>
                             <Button variant="ghost" size="icon">

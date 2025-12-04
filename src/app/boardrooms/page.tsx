@@ -4,30 +4,14 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import {
   useUser as useAuthUser,
-  useFirestore,
-  useUserCollection,
-  setDocumentNonBlocking,
-  addDocumentNonBlocking,
-  updateDocumentNonBlocking,
+  useSupabase,
 } from '@/firebase';
-import {
-  collection,
-  query,
-  where,
-  doc,
-  serverTimestamp,
-  orderBy,
-  writeBatch,
-  getDocs,
-  deleteDoc,
-} from 'firebase/firestore';
 import { ClientOnly } from '@/components/layout/client-only';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
@@ -114,27 +98,36 @@ function Notepad({ projectId, onToggleNotepad, isOpen }: { projectId: string | n
 
 function ChatPanel({ project, onToggleNotepad }: { project: Project | null; onToggleNotepad: () => void }) {
     const { user: authUser } = useAuthUser();
-    const firestore = useFirestore();
+    const supabase = useSupabase();
     const { toast } = useToast();
 
     // --- Active Project Data ---
-    const projectMembersQuery = useMemo(() => {
-        if (!project) return null;
-        return query(collection(firestore, 'projects', project.id, 'members'));
-    }, [project, firestore]);
-    const { data: projectMembers } = useUserCollection<ProjectMember>(projectMembersQuery);
+    const [projectMembers, setProjectMembers] = useState<ProjectMember[]>([]);
+    const [messages, setMessages] = useState<ProjectMessage[]>([]);
+    const [invitations, setInvitations] = useState<Invitation[]>([]);
     
-    const projectMessagesQuery = useMemo(() => {
-        if (!project) return null;
-        return query(collection(firestore, 'projects', project.id, 'messages'), orderBy('createdAt', 'asc'));
-    }, [project, firestore]);
-    const { data: messages } = useUserCollection<ProjectMessage>(projectMessagesQuery);
+    useEffect(() => {
+        if (!project) return;
+        
+        const fetchProjectData = async () => {
+            const { data: membersData } = await supabase.from('project_members').select('*, user:users(*)').eq('project_id', project.id);
+            if (membersData) {
+              setProjectMembers(membersData.map((m: any) => ({ ...m, name: m.user.name, avatar: m.user.avatar, userId: m.user_id })));
+            }
 
-    const projectInvitationsQuery = useMemo(() => {
-        if (!project) return null;
-        return query(collection(firestore, 'projects', project.id, 'invitations'));
-    }, [project, firestore]);
-    const { data: invitations } = useUserCollection<Invitation>(projectInvitationsQuery);
+            const { data: messagesData } = await supabase.from('project_messages').select('*').eq('project_id', project.id).order('created_at', { ascending: true });
+            if (messagesData) setMessages(messagesData as ProjectMessage[]);
+        };
+        fetchProjectData();
+
+        const messagesChannel = supabase.channel(`project-messages:${project.id}`)
+          .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'project_messages', filter: `project_id=eq.${project.id}` }, 
+            (payload) => setMessages(current => [...current, payload.new as ProjectMessage])
+          ).subscribe();
+
+        return () => { supabase.removeChannel(messagesChannel) };
+    }, [project, supabase]);
+
 
     const [newMessage, setNewMessage] = useState('');
     const [imageUrl, setImageUrl] = useState<string | null>(null);
@@ -142,44 +135,49 @@ function ChatPanel({ project, onToggleNotepad }: { project: Project | null; onTo
     const [fileName, setFileName] = useState<string | null>(null);
     const [isSending, setIsSending] = useState(false);
 
-    const colleaguesQuery = useMemo(() => {
-      if (!authUser) return null;
-      return query(collection(firestore, 'users', authUser.uid, 'colleagues'));
-    }, [authUser, firestore]);
-    const { data: colleagueRefs } = useUserCollection(colleaguesQuery);
-    const colleagueIds = useMemo(() => colleagueRefs?.map(c => c.id) || [], [colleagueRefs]);
-    const colleaguesDataQuery = useMemo(() => {
-        if (!firestore || colleagueIds.length === 0) return null;
-        return query(collection(firestore, 'users'), where('__name__', 'in', colleagueIds));
-    }, [firestore, colleagueIds]);
-    const { data: colleagues } = useUserCollection<User>(colleaguesDataQuery);
+    const [colleagues, setColleagues] = useState<User[]>([]);
+    useEffect(() => {
+        if (!authUser) return;
+        const fetchColleagues = async () => {
+            const { data: colleagueRelations } = await supabase.from('colleagues').select('colleague_id').eq('user_id', authUser.id);
+            if (colleagueRelations) {
+                const colleagueIds = colleagueRelations.map(r => r.colleague_id);
+                if (colleagueIds.length > 0) {
+                    const { data: colleaguesData } = await supabase.from('users').select('*').in('id', colleagueIds);
+                    if(colleaguesData) setColleagues(colleaguesData as User[]);
+                }
+            }
+        }
+        fetchColleagues();
+    }, [authUser, supabase]);
 
 
     const handleSendMessage = async () => {
-        if ((!newMessage.trim() && !imageUrl && !fileUrl) || !project || !authUser || !firestore) return;
+        if ((!newMessage.trim() && !imageUrl && !fileUrl) || !project || !authUser) return;
         setIsSending(true);
 
-        const messageData: Omit<ProjectMessage, 'id'> = {
-            senderId: authUser.uid,
-            senderName: authUser.displayName || 'User',
-            senderAvatar: authUser.photoURL || '',
+        const { data: userProfile } = await supabase.from('users').select('name, avatar').eq('id', authUser.id).single();
+
+        const messageData: Partial<ProjectMessage> = {
+            project_id: project.id,
+            sender_id: authUser.id,
+            sender_name: userProfile?.name || 'User',
+            sender_avatar: userProfile?.avatar || '',
             content: newMessage,
-            createdAt: serverTimestamp(),
-            imageUrl,
-            fileUrl,
-            fileName,
+            image_url: imageUrl,
+            file_url: fileUrl,
+            file_name: fileName,
         };
         
-        const messagesCol = collection(firestore, 'projects', project.id, 'messages');
         try {
-          await addDocumentNonBlocking(messagesCol, messageData);
+          await supabase.from('project_messages').insert(messageData);
           setNewMessage('');
           setImageUrl(null);
           setFileUrl(null);
           setFileName(null);
-        } catch (error) {
+        } catch (error: any) {
           console.error("Error sending message:", error);
-          toast({ variant: 'destructive', title: "Message Failed", description: "Could not send message." });
+          toast({ variant: 'destructive', title: "Message Failed", description: error.message });
         } finally {
             setIsSending(false);
         }
@@ -212,7 +210,7 @@ function ChatPanel({ project, onToggleNotepad }: { project: Project | null; onTo
                  {project && (
                     <div className="flex items-center space-x-1 p-1 rounded-md">
                         {(projectMembers || []).map(member => (
-                            <Avatar key={member.userId} className="h-8 w-8">
+                            <Avatar key={member.user_id} className="h-8 w-8">
                                 <AvatarImage src={member.avatar} />
                                 <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
                             </Avatar>
@@ -226,28 +224,28 @@ function ChatPanel({ project, onToggleNotepad }: { project: Project | null; onTo
                         {messages?.map(msg => (
                             <div key={msg.id} className="flex items-start gap-3 mb-4">
                                 <Avatar className="h-8 w-8">
-                                    <AvatarImage src={msg.senderAvatar} />
-                                    <AvatarFallback>{msg.senderName.charAt(0)}</AvatarFallback>
+                                    <AvatarImage src={msg.sender_avatar} />
+                                    <AvatarFallback>{msg.sender_name.charAt(0)}</AvatarFallback>
                                 </Avatar>
                                 <div>
                                     <div className="flex items-center gap-2 text-xs">
-                                        <span className="font-bold">{msg.senderName}</span>
+                                        <span className="font-bold">{msg.sender_name}</span>
                                         <span className="text-muted-foreground">
-                                            {msg.createdAt ? new Date((msg.createdAt as any).seconds * 1000).toLocaleTimeString() : 'sending...'}
+                                            {msg.created_at ? new Date(msg.created_at).toLocaleTimeString() : 'sending...'}
                                         </span>
                                     </div>
                                     <div className="text-sm mt-1 space-y-2 border-l-2 border-primary pl-4 py-1">
                                         {msg.content && <p className="whitespace-pre-wrap">{msg.content}</p>}
-                                        {msg.imageUrl && (
+                                        {msg.image_url && (
                                             <div className="relative aspect-video w-48 overflow-hidden rounded-md">
-                                                <Image src={msg.imageUrl} alt="Uploaded image" fill className="object-cover" />
+                                                <Image src={msg.image_url} alt="Uploaded image" fill className="object-cover" />
                                             </div>
                                         )}
-                                        {msg.fileUrl && (
-                                            <a href={msg.fileUrl} target="_blank" rel="noopener noreferrer">
+                                        {msg.file_url && (
+                                            <a href={msg.file_url} target="_blank" rel="noopener noreferrer">
                                                 <Button variant="outline" size="sm" className="justify-start">
                                                     <Paperclip className="mr-2 h-4 w-4" />
-                                                    {msg.fileName || "View Attachment"}
+                                                    {msg.file_name || "View Attachment"}
                                                 </Button>
                                             </a>
                                         )}
@@ -327,13 +325,43 @@ function ChatPanel({ project, onToggleNotepad }: { project: Project | null; onTo
 
 function BoardroomsPageInternal() {
   const { user: authUser, isUserLoading: isAuthUserLoading } = useAuthUser();
-  const firestore = useFirestore();
+  const supabase = useSupabase();
   const { toast } = useToast();
   const isMobile = useIsMobile();
   
   const [activeProject, setActiveProject] = useState<Project | null>(null);
   const [mobileView, setMobileView] = useState<'list' | 'chat'>('list');
   const [isNotepadOpen, setIsNotepadOpen] = useState(false);
+
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [isLoadingProjects, setIsLoadingProjects] = useState(true);
+  
+  useEffect(() => {
+      if (!authUser) {
+          setIsLoadingProjects(false);
+          return;
+      };
+      
+      const fetchProjects = async () => {
+          setIsLoadingProjects(true);
+          const { data } = await supabase.from('user_projects').select('*, project:projects(*)').eq('user_id', authUser.id).order('created_at', { ascending: false });
+          if(data) {
+              const userProjects = data.map((up: any) => ({ ...up.project, id: up.project_id, role: up.role, projectName: up.project.project_name }));
+              setProjects(userProjects);
+          }
+          setIsLoadingProjects(false);
+      }
+      fetchProjects();
+
+      const projectsSub = supabase.channel('user-projects')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'user_projects', filter: `user_id=eq.${authUser.id}` }, 
+        () => fetchProjects()
+        ).subscribe();
+
+      return () => { supabase.removeChannel(projectsSub); }
+
+  }, [authUser, supabase]);
+
 
   useEffect(() => {
     if (activeProject) {
@@ -348,96 +376,57 @@ function BoardroomsPageInternal() {
   const [isColleaguesCollapsed, setIsColleaguesCollapsed] = useState(false);
   const [isProjectsCollapsed, setIsProjectsCollapsed] = useState(false);
 
-  // --- Data Fetching ---
-  const projectsQuery = useMemo(() => {
-    if (!authUser) return null;
-    return query(collection(firestore, 'users', authUser.uid, 'projects'), orderBy('createdAt', 'desc'));
-  }, [authUser, firestore]);
-  const { data: projects, isLoading: isLoadingProjects } = useUserCollection<Project>(projectsQuery);
-
-
-  // --- State & Handlers ---
   const isLoading = isAuthUserLoading || isLoadingProjects;
 
   const handleCreateProject = async (projectName: string) => {
-    if (!projectName.trim() || !authUser || !firestore) {
+    if (!projectName.trim() || !authUser) {
         toast({ variant: 'destructive', title: "Cannot create project", description: "You must be logged in and provide a project name." });
         return;
     }
     
-    const batch = writeBatch(firestore);
-    
-    const newProjectRef = doc(collection(firestore, 'projects'));
-    const projectData: Omit<Project, 'id' | 'role'> = {
-      projectName,
-      creatorId: authUser.uid,
-      createdAt: serverTimestamp(),
-      isActive: true,
-    };
-    batch.set(newProjectRef, projectData);
-
-    const userProjectRef = doc(firestore, 'users', authUser.uid, 'projects', newProjectRef.id);
-    batch.set(userProjectRef, { ...projectData, id: newProjectRef.id, role: 'creator' });
-    
-    const projectMemberRef = doc(collection(firestore, 'projects', newProjectRef.id, 'members'), authUser.uid);
-    const memberData: ProjectMember = {
-        userId: authUser.uid,
-        role: 'creator',
-        joinedAt: serverTimestamp(),
-        name: authUser.displayName || 'Creator',
-        avatar: authUser.photoURL || '',
+    // Create Project
+    const { data: newProject, error: projectError } = await supabase.from('projects').insert({ project_name: projectName, creator_id: authUser.id }).select().single();
+    if(projectError) {
+        toast({ variant: 'destructive', title: "Creation Failed", description: projectError.message });
+        return;
     }
-    batch.set(projectMemberRef, memberData);
 
-    try {
-        await batch.commit();
-        toast({ title: 'Project Created', description: `"${projectName}" has been successfully created.` });
-        setIsCreateProjectOpen(false);
-    } catch (error) {
-        console.error("Error creating project:", error);
-        toast({ variant: 'destructive', title: "Creation Failed", description: "Could not create the project. Please try again." });
-    }
+    // Add creator to members
+    const { error: memberError } = await supabase.from('project_members').insert({ project_id: newProject.id, user_id: authUser.id, role: 'creator' });
+    if(memberError) { /* handle rollback if needed */ }
+
+    // Add to user's project list
+    const { error: userProjectError } = await supabase.from('user_projects').insert({ user_id: authUser.id, project_id: newProject.id, role: 'creator' });
+    if(userProjectError) { /* handle rollback */ }
+
+    toast({ title: 'Project Created', description: `"${projectName}" has been successfully created.` });
+    setIsCreateProjectOpen(false);
   };
   
   const handleDeleteProject = async (projectId: string) => {
-    if (!authUser || !firestore) return;
-    
-    // In a real app, you'd check for permissions here or rely on security rules.
-    
-    // Delete from the main projects collection
-    const projectRef = doc(firestore, 'projects', projectId);
-    await deleteDoc(projectRef);
-
-    // Delete from the user's subcollection
-    const userProjectRef = doc(firestore, 'users', authUser.uid, 'projects', projectId);
-    await deleteDoc(userProjectRef);
-    
-    toast({ title: "Project Deleted" });
-    if (activeProject?.id === projectId) {
-        setActiveProject(null);
+    if (!authUser) return;
+    const { error } = await supabase.from('projects').delete().eq('id', projectId);
+    if(error) {
+        toast({ variant: 'destructive', title: "Delete Failed", description: error.message });
+    } else {
+        toast({ title: "Project Deleted" });
+        if (activeProject?.id === projectId) {
+            setActiveProject(null);
+        }
     }
   }
 
   const handleRenameProject = async (projectId: string, newName: string) => {
-    if (!newName.trim() || !firestore || !authUser) return;
+    if (!newName.trim() || !authUser) return;
+    const { error } = await supabase.from('projects').update({ project_name: newName }).eq('id', projectId);
     
-    const batch = writeBatch(firestore);
-    
-    const projectRef = doc(firestore, 'projects', projectId);
-    batch.update(projectRef, { projectName: newName });
-    
-    const userProjectRef = doc(firestore, 'users', authUser.uid, 'projects', projectId);
-    batch.update(userProjectRef, { projectName: newName });
-
-    try {
-        await batch.commit();
+    if(error) {
+        toast({ variant: 'destructive', title: "Rename Failed", description: error.message });
+    } else {
         toast({ title: "Boardroom Renamed", description: `Successfully renamed to "${newName}".` });
         if (activeProject?.id === projectId) {
             setActiveProject(prev => prev ? { ...prev, projectName: newName } : null);
         }
-    } catch (error) {
-        console.error("Error renaming project:", error);
-        toast({ variant: 'destructive', title: "Rename Failed", description: "Could not rename the boardroom." });
     }
   };
 
@@ -457,20 +446,26 @@ function BoardroomsPageInternal() {
     `
   };
 
-  const colleaguesQuery = useMemo(() => {
-    if (!authUser) return null;
-    return query(collection(firestore, 'users', authUser.uid, 'colleagues'));
-  }, [authUser, firestore]);
-  const { data: colleagueRefs, isLoading: isLoadingColleagueRefs } = useUserCollection(colleaguesQuery);
+  const [colleagues, setColleagues] = useState<User[]>([]);
+  const [isLoadingColleagues, setIsLoadingColleagues] = useState(true);
 
-  const colleagueIds = useMemo(() => colleagueRefs?.map(c => c.id) || [], [colleagueRefs]);
+  useEffect(() => {
+    if(!authUser) return;
+    setIsLoadingColleagues(true);
+    const fetchColleagues = async () => {
+        const { data: relations } = await supabase.from('colleagues').select('colleague_id').eq('user_id', authUser.id);
+        if (relations) {
+            const ids = relations.map(r => r.colleague_id);
+            if (ids.length > 0) {
+                const { data: users } = await supabase.from('users').select('*').in('id', ids);
+                if (users) setColleagues(users as User[]);
+            }
+        }
+        setIsLoadingColleagues(false);
+    }
+    fetchColleagues();
+  }, [authUser, supabase]);
 
-  const colleaguesDataQuery = useMemo(() => {
-    if (!firestore || colleagueIds.length === 0) return null;
-    return query(collection(firestore, 'users'), where('__name__', 'in', colleagueIds));
-  }, [firestore, colleagueIds]);
-  const { data: colleagues, isLoading: isLoadingColleagues } = useUserCollection<User>(colleaguesDataQuery);
-  
   if (isMobile) {
       return (
           <div className="h-[90vh] overflow-hidden relative">
@@ -502,7 +497,7 @@ function BoardroomsPageInternal() {
                                       >
                                           <CardHeader className="p-3 flex-row items-center justify-between">
                                               <p className="font-semibold">{project.projectName}</p>
-                                              {project.creatorId === authUser?.uid && (
+                                              {project.creatorId === authUser?.id && (
                                                   <Button size="icon" variant="ghost" className="h-6 w-6" onClick={(e) => { e.stopPropagation(); handleDeleteProject(project.id)}}>
                                                       <Trash2 className="h-4 w-4 text-destructive" />
                                                   </Button>
@@ -555,7 +550,7 @@ function BoardroomsPageInternal() {
         <CardContent className="flex-1 overflow-hidden p-2">
             {!isColleaguesCollapsed && (
                 <ScrollArea className="h-full pr-4">
-                {(isLoading || isLoadingColleagueRefs || isLoadingColleagues) ? (
+                {(isLoadingColleagues) ? (
                     <div className="space-y-3">
                     {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
                     </div>
@@ -623,7 +618,7 @@ function BoardroomsPageInternal() {
                         >
                             <CardHeader className="p-3 flex-row items-center justify-between">
                                 <p className="font-semibold">{project.projectName}</p>
-                                {project.creatorId === authUser?.uid && (
+                                {project.creatorId === authUser?.id && (
                                     <div className="flex items-center">
                                         <Dialog>
                                             <DialogTrigger asChild>
@@ -714,46 +709,33 @@ function InviteColleaguesDialog({ colleagues, project, existingMembers, existing
     const [selectedColleagues, setSelectedColleagues] = useState<string[]>([]);
     const [isInviting, setIsInviting] = useState(false);
     const { user: authUser } = useAuthUser();
-    const firestore = useFirestore();
+    const supabase = useSupabase();
     const { toast } = useToast();
 
     const handleInvite = async () => {
-        if (selectedColleagues.length === 0 || !authUser || !project || !firestore) return;
+        if (selectedColleagues.length === 0 || !authUser || !project) return;
         setIsInviting(true);
 
-        const batch = writeBatch(firestore);
+        const invites = selectedColleagues.map(colleagueId => ({
+            project_id: project.id,
+            inviter_id: authUser.id,
+            invitee_id: colleagueId,
+            status: 'PENDING',
+        }));
 
-        selectedColleagues.forEach(colleagueId => {
-            const colleague = colleagues.find(c => c.id === colleagueId);
-            if (colleague) {
-                const invitationRef = doc(collection(firestore, 'projects', project.id, 'invitations'));
-                const invitation: Omit<Invitation, 'id'> = {
-                    projectId: project.id,
-                    projectName: project.projectName,
-                    inviterId: authUser.uid,
-                    inviterName: authUser.displayName || 'A user',
-                    inviteeId: colleagueId,
-                    status: 'PENDING',
-                    sentAt: serverTimestamp(),
-                };
-                batch.set(invitationRef, invitation);
-            }
-        });
+        const { error } = await supabase.from('project_invitations').insert(invites);
 
-        try {
-          await batch.commit();
-          toast({ title: `${selectedColleagues.length} invitation(s) sent.` });
-          setSelectedColleagues([]);
-        } catch(error) {
-          console.error("Error sending invites:", error);
-          toast({ variant: 'destructive', title: "Error", description: "Could not send invitations." });
-        } finally {
-          setIsInviting(false);
+        if(error) {
+            toast({ variant: 'destructive', title: "Error", description: "Could not send invitations." });
+        } else {
+            toast({ title: `${selectedColleagues.length} invitation(s) sent.` });
+            setSelectedColleagues([]);
         }
+        setIsInviting(false);
     };
 
     const availableColleagues = colleagues.filter(c => 
-        !existingMembers.some(m => m.userId === c.id) && 
+        !existingMembers.some(m => m.user_id === c.id) && 
         !existingInvites.some(i => i.inviteeId === c.id && i.status === 'PENDING')
     );
 
@@ -816,6 +798,8 @@ export default function BoardroomsPage() {
     </ClientOnly>
   );
 }
+
+    
 
     
 
