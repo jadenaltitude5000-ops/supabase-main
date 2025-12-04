@@ -15,7 +15,7 @@ export type AppUser = {
   following_count: number;
 };
 
-// Type for a Campaign, as used in the ad-studio page
+// Type for a Campaign, as used in ad-studio page
 export interface Campaign {
   id: string;
   name: string;
@@ -23,10 +23,9 @@ export interface Campaign {
   start_date: string;
   end_date: string | null;
   budget?: number;
-  type: 'search' | 'social' | 'display'; // Added the missing 'type' property
+  type: 'search' | 'social' | 'display';
   spend?: number;
   conversions?: number;
-  /
 }
 
 // Type for a Job, used in the file-uploader and other places
