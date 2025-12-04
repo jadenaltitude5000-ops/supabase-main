@@ -2,7 +2,7 @@
 
 pkgs.mkShell {
   buildInputs = [
-    # your other packages
-    pkgs.supabase-cli
+    pkgs.supabase-cli,
+    pkgs.deno
   ];
 }
