@@ -1,23 +1,95 @@
 
 'use client';
 
+import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { portfolioItems } from '@/lib/placeholder-data';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
-import { ExternalLink, Mail, Share2, ArrowLeft } from 'lucide-react';
+import { ExternalLink, Mail, Share2, ArrowLeft, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
+import { useSupabase } from '@/firebase';
+import type { PortfolioItem } from '@/lib/types';
+import { Skeleton } from '@/components/ui/skeleton';
+
+function PortfolioItemPageSkeleton() {
+    return (
+         <div className="min-h-screen bg-background font-mono text-foreground">
+             <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm p-4 border-b border-border/50 flex items-center justify-between">
+                <Skeleton className="h-10 w-48" />
+                <Skeleton className="h-10 w-24" />
+            </header>
+            <div className="grid grid-cols-1 lg:grid-cols-[2fr,1.2fr] min-h-[calc(100vh-65px)]">
+                <div className="p-4 md:p-8 h-full flex items-center justify-center bg-black">
+                     <Skeleton className="w-full h-96" />
+                </div>
+                <div className="p-4 md:p-8 flex flex-col space-y-8 border-l border-border/50">
+                    <div className="space-y-4">
+                        <Skeleton className="h-8 w-3/4" />
+                        <div className="flex items-center gap-3 pt-2">
+                             <Skeleton className="h-10 w-10 rounded-full" />
+                            <div className="space-y-2">
+                                <Skeleton className="h-4 w-32" />
+                                <Skeleton className="h-3 w-48" />
+                            </div>
+                        </div>
+                    </div>
+                    <div className="space-y-2">
+                        <Skeleton className="h-4 w-24" />
+                        <Skeleton className="h-12 w-full" />
+                    </div>
+                    <div className="space-y-2">
+                        <Skeleton className="h-4 w-24" />
+                        <div className="flex flex-wrap gap-2">
+                            <Skeleton className="h-6 w-16" />
+                            <Skeleton className="h-6 w-20" />
+                            <Skeleton className="h-6 w-24" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    )
+}
 
 export default function PortfolioItemPage() {
     const params = useParams();
     const router = useRouter();
+    const supabase = useSupabase();
     const { id } = params;
-  
-    const item = portfolioItems.find((p) => p.id === id);
+    
+    const [item, setItem] = useState<PortfolioItem | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        if (!id || !supabase) return;
+
+        const fetchItem = async () => {
+            setIsLoading(true);
+            const { data, error } = await supabase
+                .from('portfolio')
+                .select('*')
+                .eq('id', id)
+                .single();
+            
+            if (error || !data) {
+                console.error("Error fetching portfolio item:", error);
+                setItem(null);
+            } else {
+                setItem(data as PortfolioItem);
+            }
+            setIsLoading(false);
+        };
+
+        fetchItem();
+    }, [id, supabase]);
+
+    if (isLoading) {
+        return <PortfolioItemPageSkeleton />;
+    }
 
     if (!item) {
         return (

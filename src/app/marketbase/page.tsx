@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LayoutGrid, Box, GraduationCap, ArrowRight, User as UserIcon, ShoppingBag, DollarSign, LineChart, PlusCircle, Share2, Maximize, ArrowLeft, X, ExternalLink, Link as LinkIcon, Video, Image as ImageIcon } from 'lucide-react';
@@ -9,8 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useUser as useAuthUser, useUserCollection, useFirestore, useDoc, addDocumentNonBlocking } from '@/firebase';
-import { collection, query, where, doc, getDoc, serverTimestamp } from 'firebase/firestore';
+import { useUser as useAuthUser, useSupabase } from '@/firebase';
 import type { Course, CourseEnrollment, SaaSProduct, PortfolioItem, User } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
@@ -28,12 +27,25 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@
 
 
 function PublisherDetailsDialog({ authorId }: { authorId: string }) {
-    const firestore = useFirestore();
-    const userDocRef = useMemo(() => {
-        if (!firestore || !authorId) return null;
-        return doc(firestore, 'users', authorId);
-    }, [firestore, authorId]);
-    const { data: author, isLoading } = useDoc<User>(userDocRef);
+    const supabase = useSupabase();
+    const [author, setAuthor] = useState<User | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    
+    useEffect(() => {
+        if (!authorId) {
+            setIsLoading(false);
+            return;
+        }
+        const fetchAuthor = async () => {
+            setIsLoading(true);
+            const { data, error } = await supabase.from('users').select('*').eq('id', authorId).single();
+            if (error) console.error("Error fetching author", error);
+            if (data) setAuthor(data as User);
+            setIsLoading(false);
+        };
+        fetchAuthor();
+    }, [supabase, authorId]);
+
 
     if (isLoading) {
         return (
@@ -195,23 +207,34 @@ function PortfolioItemDialog({ item, onPrev, onNext, isPrevDisabled, isNextDisab
 
 function CatalogueTab() {
   const { user: authUser } = useAuthUser();
-  const firestore = useFirestore();
+  const supabase = useSupabase();
+  
+  const [createdCourses, setCreatedCourses] = useState<Course[]>([]);
+  const [enrollments, setEnrollments] = useState<CourseEnrollment[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch courses created by the user
-  const createdCoursesQuery = useMemo(() => {
-    if (!authUser) return null;
-    return query(collection(firestore, 'courses'), where('instructorId', '==', authUser.uid));
-  }, [authUser, firestore]);
-  const { data: createdCourses, isLoading: isLoadingCreated } = useUserCollection<Course>(createdCoursesQuery);
+  useEffect(() => {
+    if (!authUser || !supabase) {
+        setIsLoading(false);
+        return;
+    }
+    
+    const fetchData = async () => {
+        setIsLoading(true);
+        const coursesPromise = supabase.from('courses').select('*').eq('instructorId', authUser.id);
+        const enrollmentsPromise = supabase.from('enrollments').select('*').eq('user_id', authUser.id);
+        
+        const [coursesResult, enrollmentsResult] = await Promise.all([coursesPromise, enrollmentsPromise]);
+        
+        if (coursesResult.data) setCreatedCourses(coursesResult.data);
+        if (enrollmentsResult.data) setEnrollments(enrollmentsResult.data as CourseEnrollment[]);
+        
+        setIsLoading(false);
+    };
 
-  // Fetch courses the user is enrolled in
-  const enrollmentsQuery = useMemo(() => {
-    if (!authUser) return null;
-    return query(collection(firestore, 'users', authUser.uid, 'enrollments'));
-  }, [authUser, firestore]);
-  const { data: enrollments, isLoading: isLoadingEnrollments } = useUserCollection<CourseEnrollment>(enrollmentsQuery);
+    fetchData();
+  }, [authUser, supabase]);
 
-  const isLoading = isLoadingCreated || isLoadingEnrollments;
 
   if (isLoading) {
     return (
@@ -297,39 +320,43 @@ function CatalogueTab() {
 function AddPortfolioItemDialog() {
     const { toast } = useToast();
     const { user: authUser } = useAuthUser();
-    const firestore = useFirestore();
+    const supabase = useSupabase();
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [tags, setTags] = useState('');
     const [imageUrl, setImageUrl] = useState<string | null>(null);
 
     const handleUpload = async () => {
-        if (!title || !description || !tags || !imageUrl || !authUser || !firestore) {
+        if (!title || !description || !tags || !imageUrl || !authUser || !supabase) {
             toast({ variant: 'destructive', title: 'Missing Fields', description: 'Please fill out all fields.' });
             return;
         }
 
-        const userDoc = await getDoc(doc(firestore, 'users', authUser.uid));
-        if (!userDoc.exists()) {
-            toast({ variant: 'destructive', title: 'Error', description: 'Could not find your user profile.' });
+        const { data: userProfile, error } = await supabase.from('users').select('*').eq('id', authUser.id).single();
+        if (error || !userProfile) {
+             toast({ variant: 'destructive', title: 'Error', description: 'Could not find your user profile.' });
             return;
         }
-        const userData = userDoc.data() as User;
-
+        
         const newItem: Omit<PortfolioItem, 'id'> = {
             title,
             description,
             imageUrl,
             tags: tags.split(',').map(tag => tag.trim()),
-            authorId: authUser.uid,
-            author: userData.name,
-            authorAvatar: userData.avatar,
-            authorHeadline: userData.headline,
+            authorId: authUser.id,
+            author: userProfile.name,
+            authorAvatar: userProfile.avatar,
+            authorHeadline: userProfile.headline,
             mediaType: 'image', // For now, only image uploads are supported
         };
 
-        await addDocumentNonBlocking(collection(firestore, 'marketbase/listings/portfolio'), newItem);
-        toast({ title: 'Success!', description: 'Your project has been listed on the Marketbase.' });
+        const { error: insertError } = await supabase.from('portfolio').insert(newItem);
+
+        if(insertError) {
+             toast({ variant: 'destructive', title: 'Error listing project', description: insertError.message });
+        } else {
+            toast({ title: 'Success!', description: 'Your project has been listed on the Marketbase.' });
+        }
     };
 
     return (
@@ -362,12 +389,19 @@ function AddPortfolioItemDialog() {
 }
 
 function PortfolioTab() {
-    const firestore = useFirestore();
-    const portfolioQuery = useMemo(() => {
-        if (!firestore) return null;
-        return query(collection(firestore, 'marketbase/listings/portfolio'));
-    }, [firestore]);
-    const { data: portfolioItems, isLoading } = useUserCollection<PortfolioItem>(portfolioQuery);
+    const supabase = useSupabase();
+    const [portfolioItems, setPortfolioItems] = useState<PortfolioItem[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    
+     useEffect(() => {
+        const fetchItems = async () => {
+            setIsLoading(true);
+            const { data, error } = await supabase.from('portfolio').select('*').order('created_at', { ascending: false });
+            if(data) setPortfolioItems(data);
+            setIsLoading(false);
+        }
+        fetchItems();
+    }, [supabase]);
     
     if (isLoading) {
         return (
@@ -432,7 +466,7 @@ function PortfolioTab() {
 function AddSaasProductDialog() {
     const { toast } = useToast();
     const { user: authUser } = useAuthUser();
-    const firestore = useFirestore();
+    const supabase = useSupabase();
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
     const [price, setPrice] = useState('');
@@ -440,17 +474,16 @@ function AddSaasProductDialog() {
     const [websiteUrl, setWebsiteUrl] = useState('');
 
     const handleUpload = async () => {
-        if (!name || !description || !price || !websiteUrl || !authUser || !firestore) {
+        if (!name || !description || !price || !websiteUrl || !authUser || !supabase) {
             toast({ variant: 'destructive', title: 'Missing Fields' });
             return;
         }
 
-        const userDoc = await getDoc(doc(firestore, 'users', authUser.uid));
-        if (!userDoc.exists()) {
-            toast({ variant: 'destructive', title: 'Error', description: 'Could not find your user profile.' });
+        const { data: userProfile, error } = await supabase.from('users').select('name').eq('id', authUser.id).single();
+        if (error || !userProfile) {
+             toast({ variant: 'destructive', title: 'Error', description: 'Could not find your user profile.' });
             return;
         }
-        const userData = userDoc.data() as User;
 
         const newProduct: Omit<SaaSProduct, 'id'> = {
             name,
@@ -458,12 +491,16 @@ function AddSaasProductDialog() {
             price,
             tags: tags.split(',').map(t => t.trim()),
             websiteUrl,
-            authorId: authUser.uid,
-            authorName: userData.name,
+            authorId: authUser.id,
+            authorName: userProfile.name,
         };
-
-        await addDocumentNonBlocking(collection(firestore, 'marketbase/listings/saas'), newProduct);
-        toast({ title: 'Success!', description: 'Your SaaS product has been listed.' });
+        
+        const { error: insertError } = await supabase.from('saas_products').insert(newProduct);
+        if(insertError) {
+             toast({ variant: 'destructive', title: 'Error listing product', description: insertError.message });
+        } else {
+            toast({ title: 'Success!', description: 'Your SaaS product has been listed.' });
+        }
     };
 
     return (
@@ -488,12 +525,19 @@ function AddSaasProductDialog() {
 }
 
 function SaasTab() {
-    const firestore = useFirestore();
-    const saasQuery = useMemo(() => {
-        if (!firestore) return null;
-        return query(collection(firestore, 'marketbase/listings/saas'));
-    }, [firestore]);
-    const { data: saasProducts, isLoading } = useUserCollection<SaaSProduct>(saasQuery);
+    const supabase = useSupabase();
+    const [saasProducts, setSassProducts] = useState<SaaSProduct[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchItems = async () => {
+            setIsLoading(true);
+            const { data, error } = await supabase.from('saas_products').select('*').order('created_at', { ascending: false });
+            if(data) setSassProducts(data);
+            setIsLoading(false);
+        }
+        fetchItems();
+    }, [supabase]);
 
     if (isLoading) {
          return (
@@ -549,7 +593,7 @@ function SaasTab() {
 function AddCourseDialog() {
     const { toast } = useToast();
     const { user: authUser } = useAuthUser();
-    const firestore = useFirestore();
+    const supabase = useSupabase();
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [price, setPrice] = useState('');
@@ -558,14 +602,16 @@ function AddCourseDialog() {
     const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
 
     const handleUpload = async () => {
-        if (!title || !description || !price || !tags || !thumbnailUrl || !authUser || !firestore) {
+        if (!title || !description || !price || !tags || !thumbnailUrl || !authUser || !supabase) {
             toast({ variant: 'destructive', title: 'Missing Fields' });
             return;
         }
 
-        const userDoc = await getDoc(doc(firestore, 'users', authUser.uid));
-        if (!userDoc.exists()) return;
-        const userData = userDoc.data() as User;
+        const { data: userProfile, error } = await supabase.from('users').select('name, avatar').eq('id', authUser.id).single();
+        if (error || !userProfile) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Could not find your user profile.' });
+            return;
+        }
 
         const newCourse: Omit<Course, 'id' | 'rating' | 'studentCount' | 'createdAt'> = {
             title,
@@ -574,18 +620,17 @@ function AddCourseDialog() {
             tags: tags.split(',').map(t => t.trim()),
             level,
             thumbnailUrl,
-            instructorId: authUser.uid,
-            instructorName: userData.name,
-            instructorAvatar: userData.avatar,
+            instructorId: authUser.id,
+            instructorName: userProfile.name,
+            instructorAvatar: userProfile.avatar,
         };
 
-        await addDocumentNonBlocking(collection(firestore, 'marketbase/listings/courses'), {
-            ...newCourse,
-            createdAt: serverTimestamp(),
-            rating: 0,
-            studentCount: 0,
-        });
-        toast({ title: 'Success!', description: 'Your course has been listed.' });
+        const { error: insertError } = await supabase.from('courses').insert(newCourse);
+        if (insertError) {
+             toast({ variant: 'destructive', title: 'Error creating course', description: insertError.message });
+        } else {
+            toast({ title: 'Success!', description: 'Your course has been listed.' });
+        }
     };
 
     return (
@@ -618,12 +663,19 @@ function AddCourseDialog() {
 }
 
 function CoursesTab() {
-    const firestore = useFirestore();
-    const coursesQuery = useMemo(() => {
-        if (!firestore) return null;
-        return query(collection(firestore, 'marketbase/listings/courses'));
-    }, [firestore]);
-    const { data: courses, isLoading } = useUserCollection<Course>(coursesQuery);
+    const supabase = useSupabase();
+    const [courses, setCourses] = useState<Course[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchItems = async () => {
+            setIsLoading(true);
+            const { data, error } = await supabase.from('courses').select('*').order('created_at', { ascending: false });
+            if(data) setCourses(data as Course[]);
+            setIsLoading(false);
+        }
+        fetchItems();
+    }, [supabase]);
 
     if (isLoading) {
          return (
