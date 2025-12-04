@@ -16,7 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useLanguage, Language } from '@/context/language-context';
 import { translations } from '@/lib/translations';
 import { useUser, useSupabase } from '@/firebase';
-import type { User, PortfolioItem, DocumentItem, Experience, Certification, FreelancerProfile, BusinessProfile, Course, InstructorApplication } from '@/lib/types';
+import type { AppUser, PortfolioItem, DocumentItem, Experience, Certification, FreelancerProfile, BusinessProfile, Course, InstructorApplication } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from '@/hooks/use-toast';
@@ -142,7 +142,7 @@ function NichePickerDialog({ onSave, initialNiches }: { onSave: (niches: string[
             </div>
              <DialogFooter>
                 <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
-                <DialogClose asChild><Button type="button" onClick={handleSaveChanges}>Save Specializations</Button></DialogClose>
+                <DialogClose as Child ><Button type="button" onClick={handleSaveChanges}>Save Specializations</Button></DialogClose>
             </DialogFooter>
         </DialogContent>
     );
@@ -250,8 +250,8 @@ function AdvancedProfileDialog({ onSave, initialTraits }: { onSave: (traits: str
                 </Accordion>
             </div>
              <DialogFooter>
-                <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
-                <DialogClose asChild><Button type="button" onClick={handleSaveChanges}>Save Details</Button></DialogClose>
+                <DialogClose as Child ><Button type="button" variant="secondary">Cancel</Button></DialogClose>
+                <DialogClose as Child ><Button type="button" onClick={handleSaveChanges}>Save Details</Button></DialogClose>
             </DialogFooter>
         </DialogContent>
     );
@@ -431,8 +431,8 @@ function AddPortfolioItemDialog({ onSave }: { onSave: (item: Omit<PortfolioItem,
         </div>
       </div>
       <DialogFooter>
-        <DialogClose asChild><Button variant="secondary">Cancel</Button></DialogClose>
-        <DialogClose asChild><Button onClick={handleSave} disabled={isSaving || !imageUrl}>{isSaving ? 'Saving...' : 'Add Project'}</Button></DialogClose>
+        <DialogClose as Child ><Button variant="secondary">Cancel</Button></DialogClose>
+        <DialogClose as Child ><Button onClick={handleSave} disabled={isSaving || !imageUrl}>{isSaving ? 'Saving...' : 'Add Project'}</Button></DialogClose>
       </DialogFooter>
     </DialogContent>
   );
@@ -488,8 +488,8 @@ function AddExperienceDialog({ onSave }: { onSave: (item: Experience) => void })
         </div>
       </div>
       <DialogFooter>
-        <DialogClose asChild><Button variant="secondary">Cancel</Button></DialogClose>
-        <DialogClose asChild><Button onClick={handleSave} disabled={isSaving}>{isSaving ? 'Saving...' : 'Add Experience'}</Button></DialogClose>
+        <DialogClose as Child ><Button variant="secondary">Cancel</Button></DialogClose>
+        <DialogClose as Child ><Button onClick={handleSave} disabled={isSaving}>{isSaving ? 'Saving...' : 'Add Experience'}</Button></DialogClose>
       </DialogFooter>
     </DialogContent>
   );
@@ -537,8 +537,8 @@ function AddCertificationDialog({ onSave }: { onSave: (item: Certification) => v
         </div>
       </div>
       <DialogFooter>
-        <DialogClose asChild><Button variant="secondary">Cancel</Button></DialogClose>
-        <DialogClose asChild><Button onClick={handleSave} disabled={isSaving}>{isSaving ? 'Saving...' : 'Add Certification'}</Button></DialogClose>
+        <DialogClose as Child ><Button variant="secondary">Cancel</Button></DialogClose>
+        <DialogClose as Child ><Button onClick={handleSave} disabled={isSaving}>{isSaving ? 'Saving...' : 'Add Certification'}</Button></DialogClose>
       </DialogFooter>
     </DialogContent>
   );
@@ -610,8 +610,8 @@ function CreateCourseDialog({ onSave }: { onSave: (course: Partial<Course>) => v
                 </div>
             </div>
             <DialogFooter>
-                <DialogClose asChild><Button variant="secondary">Cancel</Button></DialogClose>
-                <DialogClose asChild><Button onClick={handleSave} disabled={!thumbnailUrl}>Create Course</Button></DialogClose>
+                <DialogClose as Child ><Button variant="secondary">Cancel</Button></DialogClose>
+                <DialogClose as Child ><Button onClick={handleSave} disabled={!thumbnailUrl}>Create Course</Button></DialogClose>
             </DialogFooter>
         </DialogContent>
     );
@@ -671,7 +671,7 @@ function AdminPageInternal() {
 
   const { user: authUser, isUserLoading } = useUser();
   
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AppUser | null>(null);
   const [isUserDocLoading, setIsUserDocLoading] = useState(true);
 
   const [hasDataBeenSet, setHasDataBeenSet] = useState(false);
@@ -759,7 +759,7 @@ function AdminPageInternal() {
             const freelancerProfile = Array.isArray(data.freelancerProfile) ? data.freelancerProfile[0] : data.freelancerProfile;
             const businessProfile = Array.isArray(data.businessProfile) ? data.businessProfile[0] : data.businessProfile;
 
-            const userData: User = { ...data, freelancerProfile, businessProfile };
+            const userData: AppUser = { ...data, freelancerProfile, businessProfile };
             setUser(userData);
         }
         setIsUserDocLoading(false);
@@ -923,7 +923,7 @@ function AdminPageInternal() {
           }
       }
 
-      const updatedData: Partial<User> = { 
+      const updatedData: Partial<AppUser> = { 
         name,
         handle: newHandle,
         headline, 
@@ -951,7 +951,7 @@ function AdminPageInternal() {
   const handleAccountChanges = async () => {
     if (!authUser?.id || !supabase) return;
     setIsSaving(true);
-    const updatedData: Partial<User> = {
+    const updatedData: Partial<AppUser> = {
       phoneNumber,
     };
     const { error } = await supabase.from('users').update(updatedData).eq('id', authUser.id);
@@ -969,7 +969,7 @@ function AdminPageInternal() {
   const handleSaveShareableProfile = async () => {
     if (!authUser?.id || !supabase) return;
     setIsSaving(true);
-    const dataToUpdate: Partial<User> = {
+    const dataToUpdate: Partial<AppUser> = {
         externalUrl,
         externalUrlName,
         businessCardBackground,
@@ -1851,5 +1851,7 @@ export default function AdminPage() {
         </ClientOnly>
     )
 }
+
+    
 
     
