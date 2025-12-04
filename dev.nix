@@ -6,8 +6,10 @@ pkgs.mkShell {
     pkgs.deno
   ];
 
-  # This hook prevents the prompt error
+  # This hook restores your original prompt and removes the error
   shellHook = ''
+    # Source your .bashrc to get your original prompt and aliases back
+    source ~/.bashrc
     echo "Welcome to the Supabase development environment!"
   '';
 }
