@@ -24,6 +24,9 @@ export interface Campaign {
   end_date: string | null;
   budget?: number;
   type: 'search' | 'social' | 'display'; // Added the missing 'type' property
+  spend?: number;
+  conversions?: number;
+  /
 }
 
 // Type for a Job, used in the file-uploader and other places
