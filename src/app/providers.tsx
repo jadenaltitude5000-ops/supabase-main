@@ -6,13 +6,13 @@ import { AgentProvider } from "@/context/agent-context";
 import { LanguageProvider } from "@/context/language-context";
 import { LoadingProvider } from "@/context/loading-context";
 import { ThemeProvider } from "@/context/theme-context";
-import { FirebaseProvider } from "@/firebase";
+import { SupabaseProvider } from "@/firebase";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <ThemeProvider>
       <LanguageProvider>
-        <FirebaseProvider>
+        <SupabaseProvider>
           <LoadingProvider>
             <AgentProvider>
                 <SidebarProvider>
@@ -20,7 +20,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
                 </SidebarProvider>
             </AgentProvider>
           </LoadingProvider>
-        </FirebaseProvider>
+        </SupabaseProvider>
       </LanguageProvider>
     </ThemeProvider>
   );

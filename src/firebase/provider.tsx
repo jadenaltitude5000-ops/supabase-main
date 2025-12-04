@@ -94,3 +94,5 @@ export function useUser(): UserHookResult {
     userError: context.userError,
   };
 }
+
+export { FirebaseErrorListener };
