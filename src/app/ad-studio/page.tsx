@@ -222,7 +222,7 @@ function AdStudioPageInternal() {
                             {campaign.name}
                           </TableCell>
                           <TableCell>
-                            <Badge variant={campaign.status === 'Active' ? 'default' : 'secondary'}>{campaign.status}</Badge>
+                            <Badge variant={campaign.status?.toLowerCase() === 'active' ? 'default' : 'secondary'}>{campaign.status}</Badge>
                           </TableCell>
                           <TableCell>{campaign.type}</TableCell>
                           <TableCell>{campaign.spend}</TableCell>
