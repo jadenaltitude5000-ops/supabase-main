@@ -470,8 +470,8 @@ function ClientView() {
     }
 
     const accountAge = useMemo(() => {
-        if (!currentUser?.createdAt) return 0;
-        const createdAtDate = new Date(currentUser.createdAt as string);
+        if (!currentUser?.created_at) return 0;
+        const createdAtDate = new Date(currentUser.created_at as string);
         return differenceInDays(new Date(), createdAtDate);
     }, [currentUser]);
 
@@ -866,8 +866,8 @@ function FreelancerView() {
     }
 
     const accountAge = useMemo(() => {
-        if (!currentUser?.createdAt) return 0;
-        const createdAtDate = new Date(currentUser.createdAt as string);
+        if (!currentUser?.created_at) return 0;
+        const createdAtDate = new Date(currentUser.created_at as string);
         return differenceInDays(new Date(), createdAtDate);
     }, [currentUser]);
 
