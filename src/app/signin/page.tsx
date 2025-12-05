@@ -13,7 +13,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { ClientOnly } from "@/components/layout/client-only";
 import { Loader2 } from "lucide-react";
 import { useSupabase, useUser } from "@/firebase";
-import { AuthError, AuthResponse, UserCredential } from "@supabase/supabase-js";
+import { AuthError, AuthResponse } from "@supabase/supabase-js";
 import { useContext, useEffect, useState } from "react";
 import { LoadingLink } from "@/components/layout/loading-link";
 import { LoadingContext } from "@/context/loading-context";
@@ -281,5 +281,3 @@ export default function SigninPage() {
         </ClientOnly>
     );
 }
-
-    
