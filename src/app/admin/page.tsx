@@ -20,7 +20,7 @@ import type { AppUser, PortfolioItem, DocumentItem, Experience, Certification, F
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from '@/hooks/use-toast';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MediaUploader } from '@/components/ui/media-uploader';
 import { FileUploader } from '@/components/ui/file-uploader';
@@ -28,6 +28,7 @@ import Image from 'next/image';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ClientOnly } from '@/components/layout/client-only';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -1568,7 +1569,7 @@ function AdminPageInternal() {
                           <ThemeSwitcher />
                       </div>
                   </div>
-                  <div className="space-y-4 rounded-lg border p-4">
+                   <div className="space-y-4 rounded-lg border p-4">
                       <h4 className="font-medium">{t.langAndRegion}</h4>
                         <div className="space-y-2">
                             <Label htmlFor="language">{t.language}</Label>
@@ -1851,3 +1852,5 @@ export default function AdminPage() {
         </ClientOnly>
     );
 } 
+
+    
