@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -32,7 +31,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import {
   useUser as useAuthUser,
   useSupabase,
-} from '@/firebase';
+} from '@/lib/supabase/provider';
 import type { Plan, User } from '@/lib/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -425,7 +424,7 @@ function BillingPageInternal() {
   const [isUserDocLoading, setIsUserDocLoading] = useState(true);
 
   useEffect(() => {
-    if (!authUser) {
+    if (!authUser || !supabase) {
       setIsUserDocLoading(false);
       return;
     }
@@ -449,7 +448,7 @@ function BillingPageInternal() {
   const isUserLoggedIn = !!authUser;
 
   const handleUpgrade = async (plan: Plan) => {
-    if (!authUser) {
+    if (!authUser || !supabase) {
       toast({ variant: "destructive", title: "Error", description: "You must be logged in to upgrade your plan." });
       return;
     }
@@ -464,7 +463,7 @@ function BillingPageInternal() {
   };
   
   const handlePurchaseVerification = async () => {
-    if (!authUser) {
+    if (!authUser || !supabase) {
       toast({ variant: "destructive", title: "Error", description: "You must be logged in to purchase verification." });
       return;
     }

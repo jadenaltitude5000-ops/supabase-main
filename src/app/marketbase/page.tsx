@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -9,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useUser as useAuthUser, useSupabase } from '@/firebase';
+import { useUser as useAuthUser, useSupabase } from '@/lib/supabase/provider';
 import type { Course, CourseEnrollment, SaaSProduct, PortfolioItem, User } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
@@ -32,7 +31,7 @@ function PublisherDetailsDialog({ authorId }: { authorId: string }) {
     const [isLoading, setIsLoading] = useState(true);
     
     useEffect(() => {
-        if (!authorId) {
+        if (!authorId || !supabase) {
             setIsLoading(false);
             return;
         }
@@ -394,6 +393,7 @@ function PortfolioTab() {
     const [isLoading, setIsLoading] = useState(true);
     
      useEffect(() => {
+        if (!supabase) return;
         const fetchItems = async () => {
             setIsLoading(true);
             const { data, error } = await supabase.from('portfolio').select('*').order('created_at', { ascending: false });
@@ -530,6 +530,7 @@ function SaasTab() {
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
+        if (!supabase) return;
         const fetchItems = async () => {
             setIsLoading(true);
             const { data, error } = await supabase.from('saas_products').select('*').order('created_at', { ascending: false });
@@ -668,6 +669,7 @@ function CoursesTab() {
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
+        if (!supabase) return;
         const fetchItems = async () => {
             setIsLoading(true);
             const { data, error } = await supabase.from('courses').select('*').order('created_at', { ascending: false });
@@ -794,5 +796,3 @@ function MarketbasePage() {
 }
 
 export default MarketbasePage;
-
-    

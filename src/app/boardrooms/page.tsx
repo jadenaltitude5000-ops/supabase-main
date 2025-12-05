@@ -1,11 +1,10 @@
-
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import {
   useUser as useAuthUser,
   useSupabase,
-} from '@/firebase';
+} from '@/lib/supabase/provider';
 import { ClientOnly } from '@/components/layout/client-only';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -107,7 +106,7 @@ function ChatPanel({ project, onToggleNotepad }: { project: Project | null; onTo
     const [invitations, setInvitations] = useState<Invitation[]>([]);
     
     useEffect(() => {
-        if (!project) return;
+        if (!project || !supabase) return;
         
         const fetchProjectData = async () => {
             const { data: membersData } = await supabase.from('project_members').select('*, user:users(*)').eq('project_id', project.id);
@@ -137,7 +136,7 @@ function ChatPanel({ project, onToggleNotepad }: { project: Project | null; onTo
 
     const [colleagues, setColleagues] = useState<User[]>([]);
     useEffect(() => {
-        if (!authUser) return;
+        if (!authUser || !supabase) return;
         const fetchColleagues = async () => {
             const { data: colleagueRelations } = await supabase.from('colleagues').select('colleague_id').eq('user_id', authUser.id);
             if (colleagueRelations) {
@@ -153,7 +152,7 @@ function ChatPanel({ project, onToggleNotepad }: { project: Project | null; onTo
 
 
     const handleSendMessage = async () => {
-        if ((!newMessage.trim() && !imageUrl && !fileUrl) || !project || !authUser) return;
+        if ((!newMessage.trim() && !imageUrl && !fileUrl) || !project || !authUser || !supabase) return;
         setIsSending(true);
 
         const { data: userProfile } = await supabase.from('users').select('name, avatar').eq('id', authUser.id).single();
@@ -337,7 +336,7 @@ function BoardroomsPageInternal() {
   const [isLoadingProjects, setIsLoadingProjects] = useState(true);
   
   useEffect(() => {
-      if (!authUser) {
+      if (!authUser || !supabase) {
           setIsLoadingProjects(false);
           return;
       };
@@ -379,7 +378,7 @@ function BoardroomsPageInternal() {
   const isLoading = isAuthUserLoading || isLoadingProjects;
 
   const handleCreateProject = async (projectName: string) => {
-    if (!projectName.trim() || !authUser) {
+    if (!projectName.trim() || !authUser || !supabase) {
         toast({ variant: 'destructive', title: "Cannot create project", description: "You must be logged in and provide a project name." });
         return;
     }
@@ -404,7 +403,7 @@ function BoardroomsPageInternal() {
   };
   
   const handleDeleteProject = async (projectId: string) => {
-    if (!authUser) return;
+    if (!authUser || !supabase) return;
     const { error } = await supabase.from('projects').delete().eq('id', projectId);
     if(error) {
         toast({ variant: 'destructive', title: "Delete Failed", description: error.message });
@@ -417,7 +416,7 @@ function BoardroomsPageInternal() {
   }
 
   const handleRenameProject = async (projectId: string, newName: string) => {
-    if (!newName.trim() || !authUser) return;
+    if (!newName.trim() || !authUser || !supabase) return;
     const { error } = await supabase.from('projects').update({ project_name: newName }).eq('id', projectId);
     
     if(error) {
@@ -450,7 +449,7 @@ function BoardroomsPageInternal() {
   const [isLoadingColleagues, setIsLoadingColleagues] = useState(true);
 
   useEffect(() => {
-    if(!authUser) return;
+    if(!authUser || !supabase) return;
     setIsLoadingColleagues(true);
     const fetchColleagues = async () => {
         const { data: relations } = await supabase.from('colleagues').select('colleague_id').eq('user_id', authUser.id);
@@ -713,7 +712,7 @@ function InviteColleaguesDialog({ colleagues, project, existingMembers, existing
     const { toast } = useToast();
 
     const handleInvite = async () => {
-        if (selectedColleagues.length === 0 || !authUser || !project) return;
+        if (selectedColleagues.length === 0 || !authUser || !project || !supabase) return;
         setIsInviting(true);
 
         const invites = selectedColleagues.map(colleagueId => ({

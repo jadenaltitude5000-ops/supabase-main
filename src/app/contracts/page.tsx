@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -36,7 +35,7 @@ import {
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { ClientOnly } from '@/components/layout/client-only';
-import { useUser, useSupabase } from '@/firebase';
+import { useUser, useSupabase } from '@/lib/supabase/provider';
 import type { Contract } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';

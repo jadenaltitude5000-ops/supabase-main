@@ -2,8 +2,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useUser } from '@/firebase';
-import { supabase } from '@/lib/supabase';
+import { useUser, useSupabase } from '@/lib/supabase/provider';
 
 /**
  * An invisible component that manages the user's online presence
@@ -11,6 +10,7 @@ import { supabase } from '@/lib/supabase';
  */
 export function PresenceManager() {
   const { user } = useUser();
+  const supabase = useSupabase();
   const [channel, setChannel] = useState<ReturnType<typeof supabase.channel> | null>(null);
 
   useEffect(() => {
@@ -61,7 +61,7 @@ export function PresenceManager() {
       }
        window.removeEventListener('beforeunload', handleBeforeUnload);
     };
-  }, [user, supabase]);
+  }, [user, supabase, channel]);
 
   return null; // This component does not render anything.
 }

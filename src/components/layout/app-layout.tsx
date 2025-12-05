@@ -10,7 +10,7 @@ import { useSidebar } from "@/components/ui/sidebar";
 import { ClientOnly } from "@/components/layout/client-only";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useUser } from "@/firebase";
+import { useUser } from "@/lib/supabase/provider";
 import { Skeleton } from "../ui/skeleton";
 import { Button } from "../ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "../ui/card";

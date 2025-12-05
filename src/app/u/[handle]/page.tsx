@@ -1,38 +1,86 @@
-import React from 'react';
+
+'use client';
+
+import React, { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase-client'; // Adjust path if needed
-import { Database } from '@/lib/types'; // Our new DB types
+import { AppUser as User } from '@/lib/types';
+import { useParams } from 'next/navigation';
+import { Skeleton } from '@/components/ui/skeleton';
 
-// This is a Server Component, so we can do async data fetching directly
-export default async function UserProfilePage({ params }: { params: { handle: string } }) {
+export default function UserProfilePage() {
+  const params = useParams();
   const { handle } = params;
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Fetch user data from Supabase
-  const { data: userData, error } = await supabase
-    .from('users')
-    .select('*')
-    .eq('handle', handle)
-    .single(); // .single() is like .limit(1) and .getDocs()[0]
+  useEffect(() => {
+    if (!handle) return;
+
+    const fetchUser = async () => {
+      setLoading(true);
+      setError(null);
+      
+      const { data: userData, error: fetchError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('handle', handle)
+        .single();
+
+      if (fetchError) {
+        console.error('Error fetching user:', fetchError);
+        setError('Could not load profile. This user may not exist.');
+        setUser(null);
+      } else {
+        setUser(userData as User);
+      }
+      setLoading(false);
+    };
+
+    fetchUser();
+  }, [handle]);
+
+
+  if (loading) {
+    return (
+        <div className="container mx-auto p-4 md:p-8">
+            <div className="max-w-4xl mx-auto">
+                <Skeleton className="h-48 w-full" />
+                <div className="flex items-end -mt-16 ml-8">
+                    <Skeleton className="h-32 w-32 rounded-full border-4 border-background" />
+                </div>
+                 <div className="mt-4 space-y-4">
+                    <Skeleton className="h-8 w-1/3" />
+                    <Skeleton className="h-5 w-1/2" />
+                    <Skeleton className="h-12 w-full" />
+                </div>
+            </div>
+        </div>
+    );
+  }
 
   if (error) {
-    // Handle the case where the user is not found or another error occurs
-    console.error('Error fetching user:', error);
-    return <div>Error loading profile.</div>;
+    return <div className="text-center p-8">{error}</div>;
   }
 
-  if (!userData) {
-    return <div>User not found.</div>;
+  if (!user) {
+    return <div className="text-center p-8">User not found.</div>;
   }
-
-  // Supabase returns timestamps as ISO strings, so we can use them directly
-  // or convert them to Date objects if needed: const lastSeen = new Date(userData.last_seen);
 
   return (
-    <div>
-      <h1>{userData.display_name || userData.handle}'s Profile</h1>
-      <p>Email: {userData.email}</p>
-      <p>Username: {userData.username}</p>
-      <p>Bio: {userData.bio}</p>
-      {/* Display other user data as needed */}
+    <div className="container mx-auto p-4 md:p-8">
+        <div className="max-w-4xl mx-auto">
+            <div className="h-48 bg-muted rounded-lg" style={{ backgroundImage: `url(${user.businessCardBackground})`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
+            <div className="flex items-end -mt-16 ml-8">
+                <img src={user.avatar} alt={user.name} className="h-32 w-32 rounded-full border-4 border-background bg-background" />
+            </div>
+             <div className="mt-4">
+                <h1 className="text-3xl font-bold">{user.name}</h1>
+                <p className="text-muted-foreground">@{user.handle}</p>
+                <p className="text-lg mt-1">{user.headline}</p>
+                <p className="mt-4">{user.bio}</p>
+            </div>
+        </div>
     </div>
   );
 }

@@ -58,7 +58,7 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { User } from '@/lib/types';
-import { useUser, useSupabase } from '@/firebase';
+import { useUser, useSupabase } from '@/lib/supabase/provider';
 import { buildVocabulary, createTfIdfVector } from '@/lib/algorithms/text-analysis';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';

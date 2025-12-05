@@ -1,6 +1,7 @@
-
 // This file can be used for shared TypeScript types across your app.
 // It defines the shape of your database tables and other common types.
+
+import { z } from 'zod';
 
 // Type for a User profile, combining Supabase Auth User with our public 'users' table
 export type AppUser = {
@@ -220,7 +221,7 @@ export interface Post {
   fileUrl?: string;
   fileName?: string;
   type: 'default' | 'job_opportunity' | 'repost';
-  createdAt: string | Date;
+  created_at: string | Date;
   voteCount: number;
   replyCount: number;
   repostCount: number;

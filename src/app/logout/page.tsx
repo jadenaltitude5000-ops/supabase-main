@@ -1,14 +1,16 @@
+
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useUser } from '@/firebase'; 
-import { supabase } from '@/lib/supabase-client'; 
+import { useUser, useSupabase } from '@/lib/supabase/provider';
 
 export default function LogoutPage() {
   const router = useRouter();
   const { user } = useUser();
+  const supabase = useSupabase();
 
   const handleLogout = async () => {
+    if (!supabase) return;
     const { error } = await supabase.auth.signOut();
 
     if (error) {
@@ -33,6 +35,4 @@ export default function LogoutPage() {
   return (
     <div>
       <p>You are not logged in.</p>
-    </div>
-  );
-}
+    

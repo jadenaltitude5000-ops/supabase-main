@@ -11,7 +11,7 @@ import { useSidebar } from "../ui/sidebar";
 import { useRouter } from "next/navigation";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ThemeSwitcher } from "./theme-switcher";
-import { useAuth, useUser } from "@/firebase";
+import { useUser } from "@/lib/supabase/provider";
 import Link from "next/link";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from "@/components/ui/sheet";
 import { ScrollArea } from "../ui/scroll-area";
@@ -515,5 +515,3 @@ export function GlobalSearch() {
     </div>
   );
 }
-
-    
