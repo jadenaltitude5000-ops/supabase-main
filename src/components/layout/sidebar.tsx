@@ -26,7 +26,7 @@ import {
 import { useFullscreen } from "@/hooks/use-fullscreen";
 import { useLanguage } from "@/context/language-context";
 import { translations } from "@/lib/translations";
-import { useUser } from "@/firebase";
+import { useUser } from "@/lib/supabase/provider";
 import { LoadingLink } from "./loading-link";
 
 const SidebarNavLink = ({
