@@ -11,7 +11,7 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 import { ExternalLink, Mail, Share2, ArrowLeft, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
-import { useSupabase } from '@/firebase';
+import { useSupabase } from '@/lib/supabase/provider';
 import type { PortfolioItem } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 

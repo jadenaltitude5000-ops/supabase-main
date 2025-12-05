@@ -1,5 +1,5 @@
 
-"use client";
+'use client';
 
 import { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -17,7 +17,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import { ClientOnly } from "@/components/layout/client-only";
-import { useUser as useAuthUser, useSupabase } from "@/firebase";
+import { useUser as useAuthUser, useSupabase } from "@/lib/supabase/provider";
 import type { User as UserType, FreelancerProfile } from '@/lib/types';
 import { Badge } from "@/components/ui/badge";
 import { z } from "zod";
@@ -695,7 +695,7 @@ function ClientView() {
     );
 }
 
-function ProfileStrengthCard({ profileCompletion }: { profileCompletion: { progress: number, hasBio: boolean, hasJobTitle: boolean, hasEnoughSkills: boolean, hasExperience: boolean, hasSkillSyncInfo: boolean } }) {
+function ProfileStrengthCard({ profileCompletion }: { profileCompletion: { progress: number; hasBio: boolean; hasJobTitle: boolean; hasEnoughSkills: boolean; hasExperience: boolean; hasSkillSyncInfo: boolean; } }) {
     const CompletionItem = ({ label, isComplete }: { label: string; isComplete: boolean }) => (
         <div className="flex items-center gap-3 text-sm">
             {isComplete ? (
@@ -896,7 +896,7 @@ function FreelancerView() {
         }
 
         try {
-            const freelancerProfileData = {
+            const freelancerProfileData: FreelancerProfile = {
                 name: currentUser.name || '',
                 headline: currentUser.headline || '',
                 bio: currentUser.bio || '',
@@ -1193,3 +1193,5 @@ export default function SkillSyncNetPage() {
     </ClientOnly>
   );
 }
+
+    
