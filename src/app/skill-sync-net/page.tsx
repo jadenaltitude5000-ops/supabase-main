@@ -695,7 +695,7 @@ function ClientView() {
     );
 }
 
-function ProfileStrengthCard({ profileCompletion }: { profileCompletion: Record<string, boolean> & { progress: number } }) {
+function ProfileStrengthCard({ profileCompletion }: { profileCompletion: { progress: number, hasBio: boolean, hasJobTitle: boolean, hasEnoughSkills: boolean, hasExperience: boolean, hasSkillSyncInfo: boolean } }) {
     const CompletionItem = ({ label, isComplete }: { label: string; isComplete: boolean }) => (
         <div className="flex items-center gap-3 text-sm">
             {isComplete ? (
