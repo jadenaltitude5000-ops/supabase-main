@@ -1,4 +1,3 @@
-
 // This file can be used for shared TypeScript types across your app.
 // It defines the shape of your database tables and other common types.
 
@@ -42,11 +41,11 @@ export type AppUser = {
   isAdmin?: boolean;
   isSentrybaseVerified?: boolean;
   subscription?: { planId: string };
-  onlineStatus?: { status: 'online' | 'offline'; last_seen: string };
+  online_status?: { status: 'online' | 'offline'; last_seen: string };
   experience_years?: number;
   loginHistory?: string[];
-  skills: string[];
   reliabilityScore?: number;
+  skills: string[];
 };
 
 // Type for a Campaign, as used in ad-studio page
@@ -310,53 +309,6 @@ export type CourseEnrollment = {
     enrolledAt: string;
     progress: number;
 };
-export interface Database {
-  public: {
-    Tables: {
-      users: {
-        Row: {
-          id: string
-          updated_at: string | null
-          username: string | null
-          full_name: string | null
-          avatar_url: string | null
-          website: string | null
-          bio: string | null
-        }
-        Insert: {
-          id: string
-          updated_at?: string | null
-          username?: string | null
-          full_name?: string | null
-          avatar_url?: string | null
-          website?: string | null
-          bio?: string | null
-        }
-        Update: {
-          id?: string
-          updated_at?: string | null
-          username?: string | null
-          full_name?: string | null
-          avatar_url?: string | null
-          website?: string | null
-          bio?: string | null
-        }
-      }
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      [_ in never]: never
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
-}
 
 export type Plan = {
   id: string;
@@ -405,3 +357,34 @@ export type AdCampaign = {
     conversions: number;
     created_at: string;
 };
+
+// Generic Database type for Supabase client
+export type Database = {
+  public: {
+    Tables: {
+      users: {
+        Row: AppUser;
+        Insert: Partial<AppUser>;
+        Update: Partial<AppUser>;
+      };
+      campaigns: {
+        Row: AdCampaign;
+        Insert: Omit<AdCampaign, 'id' | 'created_at'>;
+        Update: Partial<AdCampaign>;
+      };
+      // ... Add other table types here
+    };
+    Views: {
+      [_ in never]: never
+    };
+    Functions: {
+      [_ in never]: never
+    };
+    Enums: {
+      [_ in never]: never
+    };
+    CompositeTypes: {
+      [_ in never]: never
+    };
+  }
+}
