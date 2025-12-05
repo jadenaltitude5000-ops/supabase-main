@@ -31,7 +31,6 @@ export type AppUser = {
   company: string;
   pronouns: string;
   interests: string[];
-  skills: string[];
   phoneNumber: string;
   location: string;
   category: 'freelancer' | 'business' | 'other';
@@ -44,6 +43,8 @@ export type AppUser = {
   onlineStatus?: { status: 'online' | 'offline'; last_seen: string };
   experience_years?: number;
   loginHistory?: string[];
+  skills: string[];
+  reliabilityScore?: number;
 };
 
 // Type for a Campaign, as used in ad-studio page
