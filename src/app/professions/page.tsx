@@ -996,6 +996,9 @@ function PostCard({ post: initialPost, isReply = false, onReplyDeleted, onReplyU
             },
             content: '',
             type: 'repost',
+            voteCount: 0,
+            replyCount: 0,
+            repostCount: 0,
             originalPost: {
                 id: post.id,
                 authorName: post.author.name,
