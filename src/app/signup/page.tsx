@@ -12,7 +12,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { ClientOnly } from "@/components/layout/client-only";
 import { Loader2, UserPlus } from "lucide-react";
-import { useSupabase, useUser } from "@/firebase";
+import { useSupabase, useUser } from "@/lib/supabase/provider";
 import { AuthError } from "@supabase/supabase-js";
 import { useContext, useEffect, useState } from "react";
 import { LoadingLink } from "@/components/layout/loading-link";
@@ -92,6 +92,7 @@ function SignupPageInternal() {
   }, [authUser, isUserLoading, router]);
 
   const onSubmit: SubmitHandler<SignupFormValues> = async (data) => {
+    if (!supabase) return;
     showLoader('Creating account...');
     const { data: { user }, error } = await supabase.auth.signUp({
         email: data.email,
@@ -122,6 +123,7 @@ function SignupPageInternal() {
   };
 
   const handleGoogleSignUp = async () => {
+    if (!supabase) return;
     showLoader('Authenticating...');
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
@@ -255,5 +257,3 @@ export default function SignupPage() {
         </ClientOnly>
     )
 }
-
-    

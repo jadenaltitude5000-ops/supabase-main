@@ -42,7 +42,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { ClientOnly } from '@/components/layout/client-only';
-import { useUser, useSupabase } from '@/lib/supabase-client';
+import { useUser, useSupabase } from '@/lib/supabase/provider';
 import type { Campaign } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { adAnalyticsData } from '@/lib/ad-analytics-data';
@@ -331,5 +331,3 @@ export default function AdStudioPage() {
         </ClientOnly>
     );
 }
-
-    

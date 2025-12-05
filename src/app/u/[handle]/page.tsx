@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase-client'; // Adjust path if needed
+import { useSupabase } from '@/lib/supabase/provider';
 import { AppUser as User } from '@/lib/types';
 import { useParams } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -13,9 +13,10 @@ export default function UserProfilePage() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const supabase = useSupabase();
 
   useEffect(() => {
-    if (!handle) return;
+    if (!handle || !supabase) return;
 
     const fetchUser = async () => {
       setLoading(true);
@@ -38,7 +39,7 @@ export default function UserProfilePage() {
     };
 
     fetchUser();
-  }, [handle]);
+  }, [handle, supabase]);
 
 
   if (loading) {

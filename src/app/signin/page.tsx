@@ -12,7 +12,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { ClientOnly } from "@/components/layout/client-only";
 import { Loader2 } from "lucide-react";
-import { useSupabase, useUser } from "@/firebase";
+import { useSupabase, useUser } from "@/lib/supabase/provider";
 import { AuthError, AuthResponse } from "@supabase/supabase-js";
 import { useContext, useEffect, useState } from "react";
 import { LoadingLink } from "@/components/layout/loading-link";
@@ -101,6 +101,7 @@ function SigninPageInternal() {
   }, [user, isUserLoading, router, searchParams]);
 
   const onSubmit: SubmitHandler<SigninFormValues> = async (data) => {
+    if (!supabase) return;
     showLoader('Signing in...');
     const response = await supabase.auth.signInWithPassword({
         email: data.email,
@@ -111,6 +112,7 @@ function SigninPageInternal() {
   };
   
   const handlePasswordReset: SubmitHandler<PasswordResetFormValues> = async (data) => {
+    if (!supabase) return;
     const { error } = await supabase.auth.resetPasswordForEmail(data.email, {
         redirectTo: `${window.location.origin}/password-reset`,
     });
@@ -131,6 +133,7 @@ function SigninPageInternal() {
   };
 
   const handleGoogleSignIn = async () => {
+    if (!supabase) return;
     showLoader('Authenticating...');
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
