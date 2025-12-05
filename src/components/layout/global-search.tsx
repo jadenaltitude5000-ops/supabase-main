@@ -11,7 +11,7 @@ import { useSidebar } from "../ui/sidebar";
 import { useRouter } from "next/navigation";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ThemeSwitcher } from "./theme-switcher";
-import { useUser } from "@/lib/supabase/provider";
+import { useUser, useSupabase } from "@/lib/supabase/provider";
 import Link from "next/link";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from "@/components/ui/sheet";
 import { ScrollArea } from "../ui/scroll-area";
@@ -24,15 +24,15 @@ import { Tabs, TabsList, TabsTrigger } from "../ui/tabs";
 import { AgentContext } from "@/context/agent-context";
 import { Skeleton } from "../ui/skeleton";
 import { formatDistanceToNow } from 'date-fns';
-import { supabase } from "@/lib/supabase";
 
 function BookmarksPanel() {
     const { user: authUser } = useUser();
+    const supabase = useSupabase();
     const [bookmarks, setBookmarks] = useState<BookmarkType[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        if (!authUser) {
+        if (!authUser || !supabase) {
             setIsLoading(false);
             return;
         };
@@ -63,7 +63,7 @@ function BookmarksPanel() {
         };
 
         fetchBookmarks();
-    }, [authUser]);
+    }, [authUser, supabase]);
 
 
     return (
@@ -111,11 +111,12 @@ function BookmarksPanel() {
 
 export function NotificationsPanel() {
     const { user: authUser } = useUser();
+    const supabase = useSupabase();
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
      useEffect(() => {
-        if (!authUser) {
+        if (!authUser || !supabase) {
             setIsLoading(false);
             return;
         }
@@ -155,10 +156,10 @@ export function NotificationsPanel() {
             supabase.removeChannel(channel);
         }
 
-    }, [authUser]);
+    }, [authUser, supabase]);
 
     const handleMarkAsRead = async (notificationId: string) => {
-        if (!authUser) return;
+        if (!authUser || !supabase) return;
         
         const { error } = await supabase
             .from('notifications')
@@ -225,6 +226,7 @@ function Sorter() {
     const [activeTab, setActiveTab] = useState('collection');
     const [searchQuery, setSearchQuery] = useState('');
     const { setFeedFilter } = useContext(AgentContext);
+    const supabase = useSupabase();
 
     // Data fetching states
     const [allUsers, setAllUsers] = useState<UserType[]>([]);
@@ -233,6 +235,7 @@ function Sorter() {
     const [colleagueIds, setColleagueIds] = useState<Set<string>>(new Set());
 
     useEffect(() => {
+        if (!supabase) return;
         const fetchInitialData = async () => {
             const { data: usersData } = await supabase.from('users').select('*').limit(50);
             if(usersData) setAllUsers(usersData as UserType[]);
@@ -250,7 +253,7 @@ function Sorter() {
             }
         };
         fetchInitialData();
-    }, [authUser]);
+    }, [authUser, supabase]);
     
     useEffect(() => {
         const down = (e: KeyboardEvent) => {
@@ -410,11 +413,12 @@ export function GlobalSearch() {
   const router = useRouter();
   const isMobile = useIsMobile();
   const { user: authUser } = useUser();
+  const supabase = useSupabase();
   const [userProfile, setUserProfile] = useState<UserType | null>(null);
 
   useEffect(() => {
     const fetchUserProfile = async () => {
-        if(authUser) {
+        if(authUser && supabase) {
             const { data, error } = await supabase.from('users').select('*').eq('id', authUser.id).single();
             if (data) {
                 setUserProfile(data as UserType);
@@ -422,7 +426,7 @@ export function GlobalSearch() {
         }
     }
     fetchUserProfile();
-  }, [authUser]);
+  }, [authUser, supabase]);
   
   const avatarUrl = userProfile?.avatar || authUser?.user_metadata?.avatar_url;
   const displayName = userProfile?.name || authUser?.user_metadata?.full_name;

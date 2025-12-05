@@ -380,8 +380,8 @@ function PostComposer({ onPostCreated }: { onPostCreated: (newPost: PostType) =>
 
   const handlePost = async (extraPostData?: Partial<PostType>) => {
     if (!authUser || !supabase) {
-      toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to post.' });
-      return;
+        toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to post.' });
+        return;
     }
 
     if (isUserDocLoading || !currentUser) {
@@ -389,4 +389,165 @@ function PostComposer({ onPostCreated }: { onPostCreated: (newPost: PostType) =>
         return;
     }
     
-    if (!content.trim() && !imageUrl && 
+    if (!content.trim() && !imageUrl && !audioUrl && !fileUrl && !extraPostData) {
+        return;
+    }
+
+    setIsPosting(true);
+    
+    const postData: Omit<PostType, 'id' | 'created_at' | 'author' | 'voteCount' | 'replyCount' | 'repostCount'> = {
+        userId: authUser.id,
+        content,
+        image: imageUrl || undefined,
+        audioUrl: audioUrl || undefined,
+        fileUrl: fileUrl || undefined,
+        fileName: fileName || undefined,
+        type: 'default',
+        ...extraPostData,
+    };
+    
+    try {
+        const { data, error } = await supabase.from('posts').insert(postData).select().single();
+        if (error) throw error;
+        
+        const newPost: PostType = {
+            ...data,
+            author: {
+                id: currentUser.id,
+                name: currentUser.name,
+                handle: currentUser.handle,
+                avatar: currentUser.avatar,
+                isAdmin: currentUser.isAdmin,
+                isSentrybaseVerified: currentUser.isSentrybaseVerified,
+            },
+            voteCount: 0,
+            replyCount: 0,
+            repostCount: 0,
+        };
+
+        onPostCreated(newPost);
+        setContent('');
+        setImageUrl(null);
+        setAudioUrl(null);
+        setFileUrl(null);
+        setFileName(null);
+        setQuotedPost(null);
+        
+    } catch(error: any) {
+        console.error("Error creating post:", error);
+        toast({
+            variant: "destructive",
+            title: "Post Failed",
+            description: error.message,
+        });
+    } finally {
+        setIsPosting(false);
+    }
+  };
+
+  return (
+    <>
+    <ImageEditor
+        image={imageToEdit}
+        onClose={() => setImageToEdit(null)}
+        onSave={(croppedImage) => {
+          setImageUrl(croppedImage);
+          setImageToEdit(null);
+        }}
+    />
+    <Card className={cn(
+      "overflow-hidden transition-all duration-300",
+      isActive ? "shadow-2xl ring-2 ring-primary" : "shadow-md"
+    )}>
+        <CardContent className="p-4 space-y-4">
+            <div className="flex items-start gap-4">
+                <Avatar className="mt-1">
+                    <AvatarImage src={currentUser?.avatar} />
+                    <AvatarFallback>{currentUser?.name.charAt(0) || 'U'}</AvatarFallback>
+                </Avatar>
+                <Textarea
+                    ref={textareaRef}
+                    placeholder="What's happening in your niche?"
+                    className="min-h-[60px] border-none focus-visible:ring-0 shadow-none p-0 text-base"
+                    value={content}
+                    onChange={(e) => setContent(e.target.value)}
+                />
+            </div>
+            {imageUrl && (
+                <div className="relative w-full max-w-sm ml-16">
+                    <Image src={imageUrl} alt="Preview" width={400} height={300} className="rounded-lg object-cover" />
+                    <Button variant="destructive" size="icon" className="absolute top-2 right-2 h-7 w-7" onClick={() => setImageUrl(null)}>
+                        <X className="h-4 w-4" />
+                    </Button>
+                </div>
+            )}
+             {audioUrl && (
+                <div className="ml-16">
+                    <CustomAudioPlayer src={audioUrl} onRemove={() => setAudioUrl(null)} />
+                </div>
+            )}
+             {fileUrl && (
+                <div className="ml-16 flex items-center gap-2 rounded-md border bg-muted p-2 text-sm w-full max-w-xs">
+                    <Paperclip className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                    <span className="flex-1 truncate">{fileName || "Attached file"}</span>
+                    <Button variant="ghost" size="icon" className="h-6 w-6 flex-shrink-0" onClick={() => { setFileUrl(null); setFileName(null); }}>
+                        <X className="h-4 w-4" />
+                    </Button>
+                </div>
+            )}
+        </CardContent>
+        <CardFooter className="flex items-center justify-between p-4 pt-0">
+            <div className="flex items-center gap-1 text-muted-foreground">
+                 <MediaUploader onUpload={handleImageUpload}>
+                    <Button variant="ghost" size="icon" aria-label="Upload image" disabled={isPosting}>
+                        <ImageIcon className="h-5 w-5" />
+                    </Button>
+                 </MediaUploader>
+                 <FileUploader onUpload={handleFileUpload}>
+                     <Button variant="ghost" size="icon" aria-label="Upload file" disabled={isPosting}>
+                        <Paperclip className="h-5 w-5" />
+                    </Button>
+                 </FileUploader>
+                 <Button variant="ghost" size="icon" aria-label="Record audio" onMouseDown={handleStartRecording} onMouseUp={handleStopRecording} onTouchStart={handleStartRecording} onTouchEnd={handleStopRecording} disabled={isPosting}>
+                    {isRecording ? <Loader2 className="h-5 w-5 animate-spin text-red-500" /> : <Mic className="h-5 w-5" />}
+                 </Button>
+                 <Dialog>
+                    <DialogTrigger asChild>
+                        <Button variant="ghost" size="icon" aria-label="Post a gig" disabled={isPosting}>
+                            <BriefcaseBusiness className="h-5 w-5" />
+                        </Button>
+                    </DialogTrigger>
+                    <CreateGigDialog onGigCreate={postGig} />
+                 </Dialog>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                         <Button variant="ghost" size="icon" aria-label="Insert emoji" disabled={isPosting}>
+                            <Smile className="h-5 w-5" />
+                        </Button>
+                    </PopoverTrigger>
+                    <EmojiPicker onEmojiSelect={handleEmojiSelect} />
+                 </Popover>
+            </div>
+            <Button onClick={() => handlePost()} disabled={isPosting || (!content.trim() && !imageUrl)}>
+                {isPosting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
+                Post
+            </Button>
+        </CardFooter>
+    </Card>
+    </>
+  );
+}
+
+// More components here...
+
+export default function ProfessionsPage() {
+    return <ClientOnly><ProfessionsPageInternal /></ClientOnly>;
+}
+
+function ProfessionsPageInternal() {
+    return (
+        <div className="p-4">
+            <PostComposer onPostCreated={(newPost) => console.log('new post', newPost)} />
+        </div>
+    )
+}

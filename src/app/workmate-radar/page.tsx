@@ -20,7 +20,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { useUser } from '@/firebase';
+import { useUser } from '@/lib/supabase/provider';
 
 function MindsetDialog({ open, onOpenChange }: { open: boolean, onOpenChange: (open: boolean) => void }) {
     const handleUnderstood = () => {
@@ -119,7 +119,7 @@ function ContactsTab() {
   };
   
   const handleCopyInvite = (contactName: string) => {
-    const referralLink = `${window.location.origin}/signup?ref=${user?.uid}`;
+    const referralLink = `${window.location.origin}/signup?ref=${user?.id}`;
     const message = `Hey ${contactName}, I'm inviting you to join me on Sentrybase. Check it out: ${referralLink}`;
     navigator.clipboard.writeText(message);
     toast({
