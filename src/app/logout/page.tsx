@@ -1,8 +1,8 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useUser } from '@/firebase/auth/use-user'; // Using our new hook
-import { supabase } from '@/lib/supabase-client'; // Using our new client
+import { useUser } from '@/firebase'; 
+import { supabase } from '@/lib/supabase-client'; 
 
 export default function LogoutPage() {
   const router = useRouter();
