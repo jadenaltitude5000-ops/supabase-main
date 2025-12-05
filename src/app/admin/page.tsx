@@ -16,7 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useLanguage, Language } from '@/context/language-context';
 import { translations } from '@/lib/translations';
 import { useUser, useSupabase } from '@/lib/supabase/provider';
-import type { AppUser, PortfolioItem, DocumentItem, Experience, Certification, FreelancerProfile, BusinessProfile, Course, InstructorApplication } from '@/lib/types';
+import type { AppUser, PortfolioItem, DocumentItem, Experience, Certification, FreelancerProfile, BusinessProfile, Course, InstructorApplication, Database } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from '@/hooks/use-toast';
@@ -746,7 +746,7 @@ function AdminPageInternal() {
     const fetchUser = async () => {
         const { data, error } = await supabase
             .from('users')
-            .select(`*, freelancerProfile:freelancer_profiles(*), businessProfile:business_profiles(*)`)
+            .select('*, freelancerProfile:freelancer_profiles(*), businessProfile:business_profiles(*)')
             .eq('id', authUser.id)
             .single();
 
