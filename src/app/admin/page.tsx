@@ -142,7 +142,7 @@ function NichePickerDialog({ onSave, initialNiches }: { onSave: (niches: string[
             </div>
              <DialogFooter>
                 <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
-                <DialogClose as Child ><Button type="button" onClick={handleSaveChanges}>Save Specializations</Button></DialogClose>
+                <DialogClose asChild ><Button type="button" onClick={handleSaveChanges}>Save Specializations</Button></DialogClose>
             </DialogFooter>
         </DialogContent>
     );
@@ -250,8 +250,8 @@ function AdvancedProfileDialog({ onSave, initialTraits }: { onSave: (traits: str
                 </Accordion>
             </div>
              <DialogFooter>
-                <DialogClose as Child ><Button type="button" variant="secondary">Cancel</Button></DialogClose>
-                <DialogClose as Child ><Button type="button" onClick={handleSaveChanges}>Save Details</Button></DialogClose>
+                <DialogClose asChild ><Button type="button" variant="secondary">Cancel</Button></DialogClose>
+                <DialogClose asChild ><Button type="button" onClick={handleSaveChanges}>Save Details</Button></DialogClose>
             </DialogFooter>
         </DialogContent>
     );
@@ -431,8 +431,8 @@ function AddPortfolioItemDialog({ onSave }: { onSave: (item: Omit<PortfolioItem,
         </div>
       </div>
       <DialogFooter>
-        <DialogClose as Child ><Button variant="secondary">Cancel</Button></DialogClose>
-        <DialogClose as Child ><Button onClick={handleSave} disabled={isSaving || !imageUrl}>{isSaving ? 'Saving...' : 'Add Project'}</Button></DialogClose>
+        <DialogClose asChild ><Button variant="secondary">Cancel</Button></DialogClose>
+        <DialogClose asChild ><Button onClick={handleSave} disabled={isSaving || !imageUrl}>{isSaving ? 'Saving...' : 'Add Project'}</Button></DialogClose>
       </DialogFooter>
     </DialogContent>
   );
@@ -488,8 +488,8 @@ function AddExperienceDialog({ onSave }: { onSave: (item: Experience) => void })
         </div>
       </div>
       <DialogFooter>
-        <DialogClose as Child ><Button variant="secondary">Cancel</Button></DialogClose>
-        <DialogClose as Child ><Button onClick={handleSave} disabled={isSaving}>{isSaving ? 'Saving...' : 'Add Experience'}</Button></DialogClose>
+        <DialogClose asChild ><Button variant="secondary">Cancel</Button></DialogClose>
+        <DialogClose asChild ><Button onClick={handleSave} disabled={isSaving}>{isSaving ? 'Saving...' : 'Add Experience'}</Button></DialogClose>
       </DialogFooter>
     </DialogContent>
   );
@@ -537,8 +537,8 @@ function AddCertificationDialog({ onSave }: { onSave: (item: Certification) => v
         </div>
       </div>
       <DialogFooter>
-        <DialogClose as Child ><Button variant="secondary">Cancel</Button></DialogClose>
-        <DialogClose as Child ><Button onClick={handleSave} disabled={isSaving}>{isSaving ? 'Saving...' : 'Add Certification'}</Button></DialogClose>
+        <DialogClose asChild ><Button variant="secondary">Cancel</Button></DialogClose>
+        <DialogClose asChild ><Button onClick={handleSave} disabled={isSaving}>{isSaving ? 'Saving...' : 'Add Certification'}</Button></DialogClose>
       </DialogFooter>
     </DialogContent>
   );
@@ -610,8 +610,8 @@ function CreateCourseDialog({ onSave }: { onSave: (course: Partial<Course>) => v
                 </div>
             </div>
             <DialogFooter>
-                <DialogClose as Child ><Button variant="secondary">Cancel</Button></DialogClose>
-                <DialogClose as Child ><Button onClick={handleSave} disabled={!thumbnailUrl}>Create Course</Button></DialogClose>
+                <DialogClose asChild ><Button variant="secondary">Cancel</Button></DialogClose>
+                <DialogClose asChild ><Button onClick={handleSave} disabled={!thumbnailUrl}>Create Course</Button></DialogClose>
             </DialogFooter>
         </DialogContent>
     );
@@ -1849,9 +1849,5 @@ export default function AdminPage() {
         <ClientOnly>
             <AdminPageInternal />
         </ClientOnly>
-    )
-}
-
-    
-
-    
+    );
+} 
