@@ -212,7 +212,7 @@ export function WorkmateRadarForm() {
             currentUserVector: currentUserWithVector.vector,
             allUsersWithVectors: allUsersWithVectors,
             teamSize: data.teamSize,
-            currentUserdId: currentUser.id,
+            currentUserId: currentUser.id,
             country: data.country,
         };
 
@@ -730,5 +730,3 @@ function ResultsDisplay({
     </div>
   );
 }
-
-    

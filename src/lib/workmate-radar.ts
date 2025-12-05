@@ -20,10 +20,10 @@ import { AIWorkmateRadarInputSchema } from '@/lib/types';
  * @returns A list of suggested team members with a calculated match score.
  */
 export async function aiWorkmateRadar(input: AIWorkmateRadarInput): Promise<AIWorkmateRadarOutput> {
-    const { currentUserVector, allUsersWithVectors, teamSize, currentUserdId, country } = AIWorkmateRadarInputSchema.parse(input);
+    const { currentUserVector, allUsersWithVectors, teamSize, currentUserId, country } = AIWorkmateRadarInputSchema.parse(input);
 
     const candidates = allUsersWithVectors.filter(
-        (user) => user.profile.id !== currentUserdId
+        (user) => user.profile.id !== currentUserId
     );
 
     const scoredCandidates = candidates
@@ -61,7 +61,7 @@ export async function aiWorkmateRadar(input: AIWorkmateRadarInput): Promise<AIWo
     }
 
     // --- Fallback Logic: "Who You Might Profit With" ---
-    const currentUserProfile = allUsersWithVectors.find(u => u.profile.id === currentUserdId)?.profile;
+    const currentUserProfile = allUsersWithVectors.find(u => u.profile.id === currentUserId)?.profile;
     if (!currentUserProfile) {
         return { suggestedMembers: [] };
     }

@@ -10,8 +10,8 @@ export type AppUser = {
   display_name: string | null;
   photo_url: string | null;
   bio: string | null;
-  created_at: string;
-  updated_at: string;
+  created_at?: string;
+  updated_at?: string;
   follower_count: number;
   following_count: number;
   name: string;
@@ -278,7 +278,7 @@ export const AIWorkmateRadarInputSchema = z.object({
       vector: z.map(z.string(), z.number())
   })),
   teamSize: z.number().int().min(1).max(10),
-  currentUserdId: z.string(),
+  currentUserId: z.string(),
   country: z.string().optional(),
 });
 export type AIWorkmateRadarInput = z.infer<typeof AIWorkmateRadarInputSchema>;

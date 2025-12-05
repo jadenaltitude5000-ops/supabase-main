@@ -1,3 +1,4 @@
+
 /**
  * @fileOverview Live Backend Cloud Functions for Sentrybase
  * This file contains live, deterministic backend logic for data processing,
@@ -28,8 +29,9 @@ export const onUserCreate = onDocumentCreated('users/{userId}', async (event) =>
     }
     const newUser = snapshot.data();
     const referrerId = newUser.referredBy;
+    const newUserId = event.params.userId;
 
-    if (referrerId && referrerId !== newUser.id) {
+    if (referrerId && referrerId !== newUserId) {
         const referrerRef = db.collection("users").doc(referrerId);
         const referrerDoc = await referrerRef.get();
 
@@ -42,8 +44,8 @@ export const onUserCreate = onDocumentCreated('users/{userId}', async (event) =>
 
             const batch = db.batch();
 
-            const newUserColleagueRef = db.collection("users").doc(newUser.id).collection("colleagues").doc(referrerId);
-            const referrerColleagueRef = db.collection("users").doc(referrerId).collection("colleagues").doc(newUser.id);
+            const newUserColleagueRef = db.collection("users").doc(newUserId).collection("colleagues").doc(referrerId);
+            const referrerColleagueRef = db.collection("users").doc(referrerId).collection("colleagues").doc(newUserId);
             batch.set(newUserColleagueRef, { addedAt: admin.firestore.FieldValue.serverTimestamp() });
             batch.set(referrerColleagueRef, { addedAt: admin.firestore.FieldValue.serverTimestamp() });
 
