@@ -495,7 +495,7 @@ function ConfirmationDialog({ teamName, onConfirm }: { teamName: string; onConfi
                 <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
                     <AlertDialogAction onClick={() => onConfirm(name)} disabled={!name.trim()}>
-                        Confirm & Create
+                        Confirm &amp; Create
                     </AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>
@@ -730,3 +730,5 @@ function ResultsDisplay({
     </div>
   );
 }
+
+    
