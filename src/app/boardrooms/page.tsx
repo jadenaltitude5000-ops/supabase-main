@@ -130,9 +130,9 @@ function ChatPanel({ project, onToggleNotepad }: { project: Project | null; onTo
 
 
     const [newMessage, setNewMessage] = useState('');
-    const [imageUrl, setImageUrl] = useState<string | null>(null);
-    const [fileUrl, setFileUrl] = useState<string | null>(null);
-    const [fileName, setFileName] = useState<string | null>(null);
+    const [imageUrl, setImageUrl] = useState<string | undefined>(undefined);
+    const [fileUrl, setFileUrl] = useState<string | undefined>(undefined);
+    const [fileName, setFileName] = useState<string | undefined>(undefined);
     const [isSending, setIsSending] = useState(false);
 
     const [colleagues, setColleagues] = useState<User[]>([]);
@@ -172,9 +172,9 @@ function ChatPanel({ project, onToggleNotepad }: { project: Project | null; onTo
         try {
           await supabase.from('project_messages').insert(messageData);
           setNewMessage('');
-          setImageUrl(null);
-          setFileUrl(null);
-          setFileName(null);
+          setImageUrl(undefined);
+          setFileUrl(undefined);
+          setFileName(undefined);
         } catch (error: any) {
           console.error("Error sending message:", error);
           toast({ variant: 'destructive', title: "Message Failed", description: error.message });
@@ -284,7 +284,7 @@ function ChatPanel({ project, onToggleNotepad }: { project: Project | null; onTo
                             <div className="absolute -bottom-24 left-0 w-48">
                                 <div className="relative aspect-video w-full overflow-hidden rounded-md">
                                     <Image src={imageUrl} alt="Message preview" fill className="object-cover" />
-                                    <Button variant="destructive" size="icon" className="absolute top-1 right-1 h-5 w-5" onClick={() => setImageUrl(null)}><X className="h-3 w-3"/></Button>
+                                    <Button variant="destructive" size="icon" className="absolute top-1 right-1 h-5 w-5" onClick={() => setImageUrl(undefined)}><X className="h-3 w-3"/></Button>
                                 </div>
                             </div>
                         )}
@@ -293,7 +293,7 @@ function ChatPanel({ project, onToggleNotepad }: { project: Project | null; onTo
                                 <div className="flex items-center gap-2 rounded-md border bg-muted p-1 text-sm">
                                     <Paperclip className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                                     <span className="flex-1 truncate">{fileName}</span>
-                                    <Button variant="ghost" size="icon" className="h-6 w-6 flex-shrink-0" onClick={() => { setFileUrl(null); setFileName(null); }}>
+                                    <Button variant="ghost" size="icon" className="h-6 w-6 flex-shrink-0" onClick={() => { setFileUrl(undefined); setFileName(undefined); }}>
                                         <X className="h-4 w-4" />
                                     </Button>
                                 </div>
