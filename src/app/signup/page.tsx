@@ -48,8 +48,6 @@ function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
     );
 }
 
-const adminEmails = ["davinciimageryofficial@gmail.com", "jadenaltitude5000@gmail.com", "chrispeta214@gmail.com"];
-
 function SignupPageInternal() {
   const { toast } = useToast();
   const router = useRouter();
@@ -100,6 +98,7 @@ function SignupPageInternal() {
         options: {
             data: {
                 full_name: data.fullName,
+                name: data.fullName, // Also set 'name' in metadata
             }
         }
     });
@@ -111,7 +110,6 @@ function SignupPageInternal() {
         description: getAuthErrorMessage(error),
       });
     } else if (user) {
-        // Supabase now handles profile creation via a trigger, so no client-side profile creation needed.
         toast({
             title: "Confirmation Email Sent!",
             description: "Please check your inbox to verify your email address and complete registration.",

@@ -73,12 +73,12 @@ function SigninPageInternal() {
 
   const { handleSubmit, control, formState: { isSubmitting } } = form;
 
-  const handleAuthSuccess = async (response: AuthResponse) => {
-    if (response.error) {
+  const handleAuthSuccess = (error: AuthError | null) => {
+    if (error) {
          toast({
             variant: "destructive",
             title: "Sign-in Failed",
-            description: getAuthErrorMessage(response.error),
+            description: getAuthErrorMessage(error),
         });
         return;
     }
@@ -103,11 +103,11 @@ function SigninPageInternal() {
   const onSubmit: SubmitHandler<SigninFormValues> = async (data) => {
     if (!supabase) return;
     showLoader('Signing in...');
-    const response = await supabase.auth.signInWithPassword({
+    const { error } = await supabase.auth.signInWithPassword({
         email: data.email,
         password: data.password,
     });
-    await handleAuthSuccess(response);
+    handleAuthSuccess(error);
     hideLoader();
   };
   

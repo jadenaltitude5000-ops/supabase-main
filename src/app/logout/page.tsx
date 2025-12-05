@@ -2,37 +2,32 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useUser, useSupabase } from '@/lib/supabase/provider';
+import { useSupabase, useUser } from '@/lib/supabase/provider';
+import { useEffect } from 'react';
 
 export default function LogoutPage() {
   const router = useRouter();
-  const { user } = useUser();
   const supabase = useSupabase();
+  const { user } = useUser();
 
-  const handleLogout = async () => {
-    if (!supabase) return;
-    const { error } = await supabase.auth.signOut();
+  useEffect(() => {
+    const handleLogout = async () => {
+      if (!supabase) return;
+      await supabase.auth.signOut();
+      // The onAuthStateChange listener in the provider will handle the redirect.
+    };
 
-    if (error) {
-      console.error('Error logging out:', error);
+    if (user) {
+      handleLogout();
     } else {
-      // After successful logout, redirect to the sign-in page
+      // If already logged out, just redirect to signin
       router.push('/signin');
     }
-  };
+  }, [supabase, user, router]);
 
-  if (user) {
-    // If user is logged in, show the logout button
-    return (
-      <div>
-        <h1>Are you sure you want to logout?</h1>
-        <button onClick={handleLogout}>Sign Out</button>
-      </div>
-    );
-  }
-
-  // If user is not logged in, maybe show a message or redirect them
   return (
-    <div>
-      <p>You are not logged in.</p>
-    
+    <div className="flex h-screen w-full items-center justify-center">
+      <p>Logging you out...</p>
+    </div>
+  );
+}
