@@ -840,7 +840,7 @@ function FreelancerView() {
     }, [supabase, authUser]);
 
     const profileCompletion = useMemo(() => {
-        if (!currentUser) return { progress: 0 };
+        if (!currentUser) return { progress: 0, hasBio: false, hasJobTitle: false, hasEnoughSkills: false, hasExperience: false, hasSkillSyncInfo: false };
         const checks = {
             hasBio: !!currentUser.bio,
             hasJobTitle: !!currentUser.jobTitle,
@@ -937,7 +937,7 @@ function FreelancerView() {
                     </CardHeader>
                     <CardContent>
                          {!isProfileComplete && !isLoadingData ? (
-                           <ProfileStrengthCard profileCompletion={profileCompletion as any} />
+                           <ProfileStrengthCard profileCompletion={profileCompletion} />
                         ) : null}
                     </CardContent>
                     <CardFooter>

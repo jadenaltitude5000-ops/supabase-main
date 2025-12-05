@@ -31,6 +31,7 @@ export type AppUser = {
   company: string;
   pronouns: string;
   interests: string[];
+  skills: string[];
   phoneNumber: string;
   location: string;
   category: 'freelancer' | 'business' | 'other';
