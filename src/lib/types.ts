@@ -353,4 +353,51 @@ export interface Database {
     }
   }
 }
+
+export type Plan = {
+  id: string;
+  name: string;
+  price: string;
+  features: string[];
+  isCurrent: boolean;
+  bestFor?: string;
+};
+
 export type User = AppUser;
+
+// Type for a SaaS Product
+export interface SaaSProduct {
+  id: string;
+  name: string;
+  description: string;
+  authorId: string;
+  authorName: string;
+  price: string;
+  tags: string[];
+  websiteUrl: string;
+  created_at?: string | Date;
+}
+
+// Type for a Contract
+export interface Contract {
+  id: string;
+  title: string;
+  owner_id: string;
+  status: 'draft' | 'review' | 'signed' | 'archived';
+  created_at: string | Date;
+  updated_at: string | Date;
+}
+
+// Type for an ad campaign in Supabase
+export type AdCampaign = {
+    id: string;
+    user_id: string;
+    name: string;
+    status: 'active' | 'paused' | 'archived';
+    ad_type: 'profile' | 'product' | 'content' | 'job';
+    content: string;
+    targeting_keywords: string[];
+    spend: number;
+    conversions: number;
+    created_at: string;
+};
