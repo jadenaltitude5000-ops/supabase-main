@@ -1,10 +1,11 @@
+
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import {
   useUser as useAuthUser,
   useSupabase,
-} from '@/lib/supabase/provider';
+} from '@/lib/supabase-client';
 import { ClientOnly } from '@/components/layout/client-only';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -797,3 +798,5 @@ export default function BoardroomsPage() {
     </ClientOnly>
   );
 }
+
+    

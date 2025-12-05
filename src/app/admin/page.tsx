@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
@@ -14,7 +15,7 @@ import { ThemeSwitcher } from "@/components/layout/theme-switcher";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useLanguage, Language } from '@/context/language-context';
 import { translations } from '@/lib/translations';
-import { useUser, useSupabase } from '@/lib/supabase/provider';
+import { useUser, useSupabase } from '@/lib/supabase-client';
 import type { AppUser, PortfolioItem, DocumentItem, Experience, Certification, FreelancerProfile, BusinessProfile, Course, InstructorApplication } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from "@/components/ui/textarea";
@@ -1851,3 +1852,5 @@ export default function AdminPage() {
         </ClientOnly>
     );
 }
+
+    

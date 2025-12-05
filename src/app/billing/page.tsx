@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -31,7 +32,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import {
   useUser as useAuthUser,
   useSupabase,
-} from '@/lib/supabase/provider';
+} from '@/lib/supabase-client';
 import type { Plan, User } from '@/lib/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -627,3 +628,5 @@ export default function BillingPage() {
     </ClientOnly>
   );
 }
+
+    

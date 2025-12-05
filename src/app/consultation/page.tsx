@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, useSupabase } from '@/lib/supabase/provider';
+import { useUser, useSupabase } from '@/lib/supabase-client';
 import { ClientOnly } from '@/components/layout/client-only';
 import { Loader2, ArrowLeft, FileText } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -198,4 +198,9 @@ function ConsultationPageInternal() {
 export default function ConsultationPage() {
     return (
         <ClientOnly>
-            
+            <ConsultationPageInternal />
+        </ClientOnly>
+    );
+}
+
+    
