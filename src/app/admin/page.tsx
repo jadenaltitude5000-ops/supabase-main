@@ -746,7 +746,7 @@ function AdminPageInternal() {
     const fetchUser = async () => {
         const { data, error } = await supabase
             .from('users')
-            .select('*, freelancerProfile:freelancer_profiles(*), businessProfile:business_profiles(*)')
+            .select('*, freelancer_profiles(*), business_profiles(*)')
             .eq('id', authUser.id)
             .single();
 
@@ -759,8 +759,8 @@ function AdminPageInternal() {
         if (data) {
             const userData: AppUser = {
                 ...data,
-                freelancerProfile: Array.isArray(data.freelancerProfile) ? data.freelancerProfile[0] : data.freelancerProfile,
-                businessProfile: Array.isArray(data.businessProfile) ? data.businessProfile[0] : data.businessProfile,
+                freelancer_profiles: Array.isArray(data.freelancer_profiles) ? data.freelancer_profiles[0] : data.freelancer_profiles,
+                business_profiles: Array.isArray(data.business_profiles) ? data.business_profiles[0] : data.business_profiles,
             };
             setUser(userData);
         }
@@ -829,8 +829,8 @@ function AdminPageInternal() {
         setPhoneNumber(user.phone_number || '');
         setProfileType(user.category === 'business' ? 'business' : 'freelancer');
         
-        if (user.freelancerProfile) {
-            const data = user.freelancerProfile;
+        if (user.freelancer_profiles) {
+            const data = user.freelancer_profiles;
             setFreelancerTitle(data.title || '');
             setFreelancerSkills((data.skills || []).join(', '));
             setHourlyRate(data.hourly_rate || '');
@@ -839,8 +839,8 @@ function AdminPageInternal() {
             setAdvancedTraits(data.advanced_traits || []);
         }
 
-        if(user.businessProfile) {
-            const data = user.businessProfile;
+        if(user.business_profiles) {
+            const data = user.business_profiles;
             setCompanyName(data.company_name || '');
             setCompanySize(data.company_size || '');
             setHiringGoals(data.hiring_goals || '');
@@ -1035,7 +1035,7 @@ function AdminPageInternal() {
   
   const handleAddPortfolioItem = async (itemData: Omit<PortfolioItem, 'id' | 'authorId' | 'author' | 'authorAvatar' | 'authorHeadline' | 'mediaType'>) => {
     if (!authUser || !supabase) return;
-    const newPortfolio = [...(user?.portfolio || []), { id: crypto.randomUUID(), ...itemData }];
+     const newPortfolio = [...(user?.portfolio as PortfolioItem[] || []), { id: crypto.randomUUID(), ...itemData }];
     const { error } = await supabase.from('users').update({ portfolio: newPortfolio }).eq('id', authUser.id);
     if(error) toast({ variant: 'destructive', title: "Error", description: "Could not save portfolio item." });
     else {
@@ -1052,7 +1052,7 @@ function AdminPageInternal() {
         fileType: name.split('.').pop() as any || 'pdf',
         uploadedAt: new Date(),
      };
-     const newDocuments = [...(user?.documents || []), newDocument];
+     const newDocuments = [...(user?.documents as DocumentItem[] || []), newDocument];
      const { error } = await supabase.from('users').update({ documents: newDocuments }).eq('id', authUser.id);
      if(error) toast({ variant: 'destructive', title: "Error", description: "Could not save document." });
      else {
@@ -1063,7 +1063,7 @@ function AdminPageInternal() {
   
   const handleRemoveDocument = async (docToRemove: DocumentItem) => {
     if (!authUser || !supabase) return;
-    const newDocuments = (user?.documents || []).filter(doc => doc.fileUrl !== docToRemove.fileUrl);
+    const newDocuments = (user?.documents as DocumentItem[] || []).filter(doc => doc.fileUrl !== docToRemove.fileUrl);
     const { error } = await supabase.from('users').update({ documents: newDocuments }).eq('id', authUser.id);
     if(error) toast({ variant: 'destructive', title: "Error", description: "Could not remove document." });
     else {
@@ -1074,7 +1074,7 @@ function AdminPageInternal() {
 
   const handleAddExperience = async (newItem: Experience) => {
     if (!authUser || !supabase) return;
-    const newExperiences = [...(user?.experiences || []), newItem];
+    const newExperiences = [...(user?.experiences as Experience[] || []), newItem];
     const { error } = await supabase.from('users').update({ experiences: newExperiences }).eq('id', authUser.id);
     if(error) toast({ variant: 'destructive', title: "Error", description: "Could not save experience." });
     else {
@@ -1085,7 +1085,7 @@ function AdminPageInternal() {
 
   const handleAddCertification = async (newItem: Certification) => {
     if (!authUser || !supabase) return;
-    const newCertifications = [...(user?.certifications || []), newItem];
+    const newCertifications = [...(user?.certifications as Certification[] || []), newItem];
     const { error } = await supabase.from('users').update({ certifications: newCertifications }).eq('id', authUser.id);
     if(error) toast({ variant: 'destructive', title: "Error", description: "Could not save certification." });
     else {

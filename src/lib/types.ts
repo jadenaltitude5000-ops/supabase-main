@@ -1,4 +1,3 @@
-
 // This file can be used for shared TypeScript types across your app.
 // It defines the shape of your database tables and other common types.
 
@@ -8,11 +7,12 @@ import type { Database as DB } from './database.types';
 declare global {
     type Database = DB;
 }
+export type { Database }; // Export the Database type for use in other files
 
 // Type for a User profile, combining Supabase Auth User with our public 'users' table
 export type AppUser = DB['public']['Tables']['users']['Row'] & {
-    freelancerProfile?: FreelancerProfile | null;
-    businessProfile?: BusinessProfile | null;
+    freelancer_profiles?: FreelancerProfile | null;
+    business_profiles?: BusinessProfile | null;
 };
 
 // Type for a Campaign, as used in ad-studio page
