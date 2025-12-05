@@ -897,12 +897,12 @@ function FreelancerView() {
 
         try {
             const freelancerProfileData = {
-                name: currentUser.name,
-                headline: currentUser.headline,
-                bio: currentUser.bio,
-                skills: currentUser.skills,
+                name: currentUser.name || '',
+                headline: currentUser.headline || '',
+                bio: currentUser.bio || '',
+                skills: currentUser.skills || [],
                 experience_years: currentUser.experience_years,
-                email: currentUser.email,
+                email: currentUser.email || '',
             };
 
             const input: SkillSyncNetInput = {

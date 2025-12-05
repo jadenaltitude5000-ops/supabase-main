@@ -23,8 +23,8 @@ export type ClientBrief = z.infer<typeof ClientBriefSchema>;
 
 export const FreelancerProfileSchema = z.object({
     name: z.string(),
-    headline: z.string(),
-    bio: z.string(),
+    headline: z.string().nullable().optional(),
+    bio: z.string().nullable().optional(),
     skills: z.array(z.string()),
     experience_years: z.number().optional(),
     email: z.string().email().optional(),
