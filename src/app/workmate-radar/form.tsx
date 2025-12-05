@@ -192,7 +192,7 @@ export function WorkmateRadarForm() {
                 skills: u.skills,
                 reliabilityScore: u.reliabilityScore,
                 location: u.location,
-                createdAt: u.created_at,
+                created_at: u.created_at,
             };
             return {
                 profile: serializableProfile as User,
