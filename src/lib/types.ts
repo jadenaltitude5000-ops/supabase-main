@@ -42,29 +42,14 @@ export interface Job {
 
 // Type for a Portfolio Item, used in the admin page
 export interface PortfolioItem {
-  imageUrl: string;
-  /
   id: string;
-  imageUrl: string;
-  /
   title: string;
-  imageUrl: string;
-  /
   description: string;
-  imageUrl: string;
-  /
-  media_url: string;
-  imageUrl: string;
-  /
+  imageUrl: string; // This was the missing property
+  media_url: string; // Alias for imageUrl, good to have both
   project_url: string;
-  imageUrl: string;
-  /
   user_id: AppUser['id'];
-  imageUrl: string;
-  /
   created_at: string;
-  imageUrl: string;
-  /
   updated_at: string;
 }
 
