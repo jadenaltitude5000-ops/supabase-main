@@ -1,3 +1,4 @@
+
 // This file can be used for shared TypeScript types across your app.
 // It defines the shape of your database tables and other common types.
 
@@ -45,7 +46,8 @@ export interface PortfolioItem {
   id: string;
   title: string;
   description: string;
-  imageUrl: string; // This was the missing property
+  imageUrl: string;
+  objectFit?: 'contain' | 'cover';
   media_url: string; // Alias for imageUrl, good to have both
   project_url: string;
   user_id: AppUser['id'];
