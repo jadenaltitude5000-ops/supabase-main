@@ -76,11 +76,6 @@ export interface PortfolioItem {
   imageUrl: string;
   tags: string[];
   objectFit?: 'contain' | 'cover';
-  media_url?: string;
-  project_url?: string;
-  user_id?: AppUser['id'];
-  created_at?: string | Date;
-  updated_at?: string | Date;
   authorId: string;
   author: string;
   authorAvatar: string;
@@ -89,6 +84,11 @@ export interface PortfolioItem {
   images?: string[];
   videoUrl?: string;
   appUrl?: string;
+  media_url?: string;
+  project_url?: string;
+  user_id?: AppUser['id'];
+  created_at?: string | Date;
+  updated_at?: string | Date;
 }
 
 // Type for a Document, used in the admin page
@@ -354,4 +354,3 @@ export interface Database {
   }
 }
 export type User = AppUser;
-```
