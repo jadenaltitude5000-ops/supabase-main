@@ -6,7 +6,7 @@ import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { aiWorkmateRadar } from '@/lib/workmate-radar';
-import type { AIWorkmateRadarInput, AIWorkmateRadarOutput, User as UserType } from '@/lib/types';
+import type { AIWorkmateRadarInput, AIWorkmateRadarOutput, User as UserType, AppUser } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -64,7 +64,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 
 const formSchema = z.object({
@@ -129,7 +129,7 @@ export function WorkmateRadarForm() {
   const supabase = useSupabase();
   const { toast } = useToast();
 
-  const [currentUser, setCurrentUser] = useState<UserType | null>(null);
+  const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
   const [isCurrentUserLoading, setIsCurrentUserLoading] = useState(true);
 
   useEffect(() => {
@@ -141,7 +141,10 @@ export function WorkmateRadarForm() {
         setIsCurrentUserLoading(true);
         const { data } = await supabase.from('users').select('*, freelancerProfile:freelancer_profiles(*)').eq('id', authUser.id).single();
         if (data) {
-            const userData: UserType = { ...data, freelancerProfile: data.freelancerProfile[0] } as UserType;
+            const userData: AppUser = {
+                ...data,
+                freelancerProfile: Array.isArray(data.freelancerProfile) ? data.freelancerProfile[0] : data.freelancerProfile
+            };
             setCurrentUser(userData);
         }
         setIsCurrentUserLoading(false);
@@ -190,7 +193,7 @@ export function WorkmateRadarForm() {
                 headline: u.headline,
                 bio: u.bio,
                 skills: u.skills,
-                reliabilityScore: u.reliabilityScore,
+                reliability_score: u.reliability_score,
                 location: u.location,
                 created_at: u.created_at,
             };
@@ -254,7 +257,7 @@ export function WorkmateRadarForm() {
     }
     
     // Construct a descriptive string from the user's profile
-    const userTraits = (currentUser.freelancerProfile?.advancedTraits || []).join(', ');
+    const userTraits = (currentUser.freelancerProfile?.advanced_traits || []).join(', ');
     let autoProfile = `This user's headline is "${currentUser.headline}". Their bio is: "${currentUser.bio}". Their skills include: ${(currentUser.skills || []).join(', ')}.`;
     if (userTraits) {
         autoProfile += ` Their work style and traits include: ${userTraits}.`;
@@ -444,8 +447,8 @@ export function WorkmateRadarForm() {
                         {currentUser && (
                             <div className="flex items-center gap-2 rounded-full border border-dashed p-1 pr-3">
                                 <Avatar className="h-8 w-8">
-                                    <AvatarImage src={currentUser.avatar} />
-                                    <AvatarFallback>{currentUser.name.charAt(0)}</AvatarFallback>
+                                    <AvatarImage src={currentUser.avatar ?? undefined} />
+                                    <AvatarFallback>{currentUser.name?.charAt(0)}</AvatarFallback>
                                 </Avatar>
                                 <span className="text-sm font-medium">{currentUser.name} (You)</span>
                             </div>
@@ -453,8 +456,8 @@ export function WorkmateRadarForm() {
                         {selectedMembers.map(member => (
                             <div key={member.id} className="flex items-center gap-2 rounded-full border bg-muted p-1 pr-3">
                                 <Avatar className="h-8 w-8">
-                                    <AvatarImage src={member.avatar} />
-                                    <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
+                                    <AvatarImage src={member.avatar ?? undefined} />
+                                    <AvatarFallback>{member.name?.charAt(0)}</AvatarFallback>
                                 </Avatar>
                                 <span className="text-sm font-medium">{member.name}</span>
                             </div>
@@ -558,7 +561,7 @@ function ProfileDialog({ member }: { member: SuggestedMemberWithProfile }) {
         <DialogContent className="max-w-md">
             <DialogHeader className="items-center text-center">
                 <Avatar className="h-24 w-24 mb-4">
-                    <AvatarImage src={member.fullProfile.avatar} alt={member.name} />
+                    <AvatarImage src={member.fullProfile.avatar ?? undefined} alt={member.name} />
                     <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <DialogTitle className="text-2xl">{member.name}</DialogTitle>
@@ -569,7 +572,7 @@ function ProfileDialog({ member }: { member: SuggestedMemberWithProfile }) {
                 <div>
                     <h4 className="font-semibold text-foreground mb-2">Skills</h4>
                     <div className="flex flex-wrap gap-2">
-                        {member.fullProfile.skills.map((skill: string) => (
+                        {member.fullProfile.skills?.map((skill: string) => (
                             <Badge key={skill} variant="secondary">{skill}</Badge>
                         ))}
                     </div>
@@ -661,7 +664,7 @@ function ResultsDisplay({
                             <DialogTrigger asChild>
                                 <div className="flex items-start gap-4 cursor-pointer">
                                     <Avatar className="h-12 w-12">
-                                    <AvatarImage src={member.fullProfile?.avatar} alt={member.name} />
+                                    <AvatarImage src={member.fullProfile?.avatar ?? undefined} alt={member.name} />
                                     <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
                                     </Avatar>
                                     <div className="flex-1">

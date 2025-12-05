@@ -1,51 +1,18 @@
+
 // This file can be used for shared TypeScript types across your app.
 // It defines the shape of your database tables and other common types.
 
 import { z } from 'zod';
+import type { Database as DB } from './database.types';
+
+declare global {
+    type Database = DB;
+}
 
 // Type for a User profile, combining Supabase Auth User with our public 'users' table
-export type AppUser = {
-  id: string;
-  email: string;
-  username: string | null;
-  display_name: string | null;
-  photo_url: string | null;
-  bio: string | null;
-  created_at?: string;
-  updated_at?: string;
-  follower_count: number;
-  following_count: number;
-  name: string;
-  handle: string;
-  headline: string;
-  motto: string;
-  avatar: string;
-  businessCardBackground: string;
-  businessCardStealth: boolean;
-  externalUrl: string;
-  externalUrlName: string;
-  portfolio: PortfolioItem[];
-  documents: DocumentItem[];
-  experiences: Experience[];
-  certifications: Certification[];
-  jobTitle: string;
-  company: string;
-  pronouns: string;
-  interests: string[];
-  phoneNumber: string;
-  location: string;
-  category: 'freelancer' | 'business' | 'other';
-  freelancerProfile: FreelancerProfile;
-  businessProfile: BusinessProfile;
-  isInstructor?: boolean;
-  isAdmin?: boolean;
-  isSentrybaseVerified?: boolean;
-  subscription?: { planId: string };
-  online_status?: { status: 'online' | 'offline'; last_seen: string };
-  experience_years?: number;
-  loginHistory?: string[];
-  reliabilityScore?: number;
-  skills: string[];
+export type AppUser = DB['public']['Tables']['users']['Row'] & {
+    freelancerProfile?: FreelancerProfile | null;
+    businessProfile?: BusinessProfile | null;
 };
 
 // Type for a Campaign, as used in ad-studio page
@@ -103,68 +70,22 @@ export interface DocumentItem {
 }
 
 // Type for an Experience entry
-export interface Experience {
-  title: string;
-  company: string;
-  startDate: string;
-  endDate: string | null;
-  description: string;
-}
+export type Experience = DB['public']['Tables']['experiences']['Row'];
 
 // Type for a Certification
-export interface Certification {
-  name: string;
-  issuingOrganization: string;
-  date: string;
-  credentialUrl?: string;
-}
+export type Certification = DB['public']['Tables']['certifications']['Row'];
 
 // Type for a Freelancer Profile
-export interface FreelancerProfile {
-  title?: string;
-  skills?: string[];
-  hourlyRate?: number;
-  availability?: 'full-time' | 'part-time' | 'contract' | 'unavailable';
-  specializedNiches?: string[];
-  advancedTraits?: string[];
-}
+export type FreelancerProfile = DB['public']['Tables']['freelancer_profiles']['Row'];
 
 // Type for a Business Profile
-export interface BusinessProfile {
-  companyName?: string;
-  industry?: string;
-  companySize?: '1-10' | '11-50' | '51-200' | '201-1000' | '1000+';
-  hiringGoals?: string;
-}
+export type BusinessProfile = DB['public']['Tables']['business_profiles']['Row'];
 
 // Type for a Course
-export interface Course {
-  id: string;
-  title: string;
-  description: string;
-  thumbnailUrl: string;
-  instructorId: string;
-  instructorName: string;
-  instructorAvatar: string;
-  price: number;
-  tags: string[];
-  level: 'beginner' | 'intermediate' | 'advanced';
-  rating: number;
-  studentCount: number;
-  createdAt?: string | Date;
-}
+export type Course = DB['public']['Tables']['courses']['Row'];
 
 // Type for an Instructor Application
-export interface InstructorApplication {
-  id: string;
-  userId: string;
-  userName: string;
-  userEmail: string;
-  motivation: string;
-  expertise: string;
-  status: 'pending' | 'approved' | 'rejected';
-  submittedAt: string | Date;
-}
+export type InstructorApplication = DB['public']['Tables']['instructor_applications']['Row'];
 
 export type Project = {
   id: string;
@@ -357,34 +278,3 @@ export type AdCampaign = {
     conversions: number;
     created_at: string;
 };
-
-// Generic Database type for Supabase client
-export type Database = {
-  public: {
-    Tables: {
-      users: {
-        Row: AppUser;
-        Insert: Partial<AppUser>;
-        Update: Partial<AppUser>;
-      };
-      campaigns: {
-        Row: AdCampaign;
-        Insert: Omit<AdCampaign, 'id' | 'created_at'>;
-        Update: Partial<AdCampaign>;
-      };
-      // ... Add other table types here
-    };
-    Views: {
-      [_ in never]: never
-    };
-    Functions: {
-      [_ in never]: never
-    };
-    Enums: {
-      [_ in never]: never
-    };
-    CompositeTypes: {
-      [_ in never]: never
-    };
-  }
-}

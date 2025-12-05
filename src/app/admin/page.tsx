@@ -450,7 +450,7 @@ function AddExperienceDialog({ onSave }: { onSave: (item: Experience) => void })
   const handleSave = () => {
     if (!title || !company || !startDate) return;
     setIsSaving(true);
-    const newItem: Experience = { title, company, startDate, endDate, description };
+    const newItem: Experience = { title, company, start_date: startDate, end_date: endDate, description, id: '', user_id: '' };
     // Simulate save
     setTimeout(() => {
         onSave(newItem);
@@ -506,7 +506,7 @@ function AddCertificationDialog({ onSave }: { onSave: (item: Certification) => v
   const handleSave = () => {
     if (!name || !org || !date) return;
     setIsSaving(true);
-    const newItem: Certification = { name, issuingOrganization: org, date, credentialUrl: url };
+    const newItem: Certification = { name, issuing_organization: org, date, credential_url: url, id: '', user_id: '' };
     setTimeout(() => {
         onSave(newItem);
         setIsSaving(false);
@@ -561,7 +561,7 @@ function CreateCourseDialog({ onSave }: { onSave: (course: Partial<Course>) => v
             price: parseFloat(price),
             level,
             tags: tags.split(',').map(tag => tag.trim()),
-            thumbnailUrl,
+            thumbnail_url: thumbnailUrl,
         };
         onSave(newCourse);
     };
@@ -633,8 +633,8 @@ function AdminPanel({ applications, onUpdateApplication }: { applications: Instr
                             {applications.map(app => (
                                 <Card key={app.id}>
                                     <CardHeader>
-                                        <CardTitle className="text-lg">{app.userName}</CardTitle>
-                                        <CardDescription>{app.userEmail}</CardDescription>
+                                        <CardTitle className="text-lg">{app.user_name}</CardTitle>
+                                        <CardDescription>{app.user_email}</CardDescription>
                                     </CardHeader>
                                     <CardContent className="space-y-4">
                                          <div>
@@ -647,8 +647,8 @@ function AdminPanel({ applications, onUpdateApplication }: { applications: Instr
                                         </div>
                                     </CardContent>
                                     <CardFooter className="flex gap-4">
-                                        <Button size="sm" onClick={() => onUpdateApplication(app.id, app.userId, 'approved')}>Approve</Button>
-                                        <Button size="sm" variant="destructive" onClick={() => onUpdateApplication(app.id, app.userId, 'rejected')}>Reject</Button>
+                                        <Button size="sm" onClick={() => onUpdateApplication(app.id, app.user_id, 'approved')}>Approve</Button>
+                                        <Button size="sm" variant="destructive" onClick={() => onUpdateApplication(app.id, app.user_id, 'rejected')}>Reject</Button>
                                     </CardFooter>
                                 </Card>
                             ))}
@@ -718,7 +718,7 @@ function AdminPageInternal() {
   const [hourlyRate, setHourlyRate] = useState<number | string>('');
   const [availability, setAvailability] = useState<FreelancerProfile['availability'] | ''>('');
   const [companyName, setCompanyName] = useState('');
-  const [companySize, setCompanySize] = useState<BusinessProfile['companySize'] | ''>('');
+  const [companySize, setCompanySize] = useState<BusinessProfile['company_size'] | ''>('');
   const [hiringGoals, setHiringGoals] = useState('');
   const [industry, setIndustry] = useState('');
 
@@ -728,8 +728,8 @@ function AdminPageInternal() {
   // Instructor State
   const [userCourses, setUserCourses] = useState<Course[]>([]);
   const [isLoadingCourses, setIsLoadingCourses] = useState(true);
-  const isInstructor = user?.isInstructor;
-  const isAdmin = user?.isAdmin;
+  const isInstructor = user?.is_instructor;
+  const isAdmin = user?.is_admin;
 
   // Admin State
   const [applications, setApplications] = useState<InstructorApplication[]>([]);
@@ -757,10 +757,11 @@ function AdminPageInternal() {
         }
 
         if (data) {
-            const freelancerProfile = Array.isArray(data.freelancerProfile) ? data.freelancerProfile[0] : data.freelancerProfile;
-            const businessProfile = Array.isArray(data.businessProfile) ? data.businessProfile[0] : data.businessProfile;
-
-            const userData: AppUser = { ...data, freelancerProfile, businessProfile };
+            const userData: AppUser = {
+                ...data,
+                freelancerProfile: Array.isArray(data.freelancerProfile) ? data.freelancerProfile[0] : data.freelancerProfile,
+                businessProfile: Array.isArray(data.businessProfile) ? data.businessProfile[0] : data.businessProfile,
+            };
             setUser(userData);
         }
         setIsUserDocLoading(false);
@@ -813,36 +814,36 @@ function AdminPageInternal() {
         setMotto(user.motto || '');
         setCountry(user.location || '');
         setAvatar(user.avatar || null);
-        setBusinessCardBackground(user.businessCardBackground || '');
-        setBusinessCardStealth(user.businessCardStealth || false);
-        setExternalUrl(user.externalUrl || '');
-        setExternalUrlName(user.externalUrlName || '');
-        setPortfolioItems(user.portfolio || []);
-        setDocuments(user.documents || []);
-        setExperiences(user.experiences || []);
-        setCertifications(user.certifications || []);
-        setJobTitle(user.jobTitle || '');
+        setBusinessCardBackground(user.business_card_background || '');
+        setBusinessCardStealth(user.business_card_stealth || false);
+        setExternalUrl(user.external_url || '');
+        setExternalUrlName(user.external_url_name || '');
+        setPortfolioItems((user.portfolio as PortfolioItem[]) || []);
+        setDocuments((user.documents as DocumentItem[]) || []);
+        setExperiences((user.experiences as Experience[]) || []);
+        setCertifications((user.certifications as Certification[]) || []);
+        setJobTitle(user.job_title || '');
         setCompany(user.company || '');
         setPronouns(user.pronouns || '');
         setInterests((user.interests || []).join(', '));
-        setPhoneNumber(user.phoneNumber || '');
+        setPhoneNumber(user.phone_number || '');
         setProfileType(user.category === 'business' ? 'business' : 'freelancer');
         
         if (user.freelancerProfile) {
             const data = user.freelancerProfile;
             setFreelancerTitle(data.title || '');
             setFreelancerSkills((data.skills || []).join(', '));
-            setHourlyRate(data.hourlyRate || '');
+            setHourlyRate(data.hourly_rate || '');
             setAvailability(data.availability || '');
-            setSpecializedNiches(data.specializedNiches || []);
-            setAdvancedTraits(data.advancedTraits || []);
+            setSpecializedNiches(data.specialized_niches || []);
+            setAdvancedTraits(data.advanced_traits || []);
         }
 
         if(user.businessProfile) {
             const data = user.businessProfile;
-            setCompanyName(data.companyName || '');
-            setCompanySize(data.companySize || '');
-            setHiringGoals(data.hiringGoals || '');
+            setCompanyName(data.company_name || '');
+            setCompanySize(data.company_size || '');
+            setHiringGoals(data.hiring_goals || '');
             setIndustry(data.industry || '');
         }
 
@@ -931,7 +932,7 @@ function AdminPageInternal() {
         bio,
         motto,
         location: country,
-        jobTitle,
+        job_title: jobTitle,
         company,
         pronouns,
         interests: interests.split(',').map(i => i.trim()).filter(Boolean),
@@ -953,7 +954,7 @@ function AdminPageInternal() {
     if (!authUser?.id || !supabase) return;
     setIsSaving(true);
     const updatedData: Partial<AppUser> = {
-      phoneNumber,
+      phone_number: phoneNumber,
     };
     const { error } = await supabase.from('users').update(updatedData).eq('id', authUser.id);
     if(error) {
@@ -971,10 +972,10 @@ function AdminPageInternal() {
     if (!authUser?.id || !supabase) return;
     setIsSaving(true);
     const dataToUpdate: Partial<AppUser> = {
-        externalUrl,
-        externalUrlName,
-        businessCardBackground,
-        businessCardStealth,
+        external_url: externalUrl,
+        external_url_name: externalUrlName,
+        business_card_background: businessCardBackground,
+        business_card_stealth: businessCardStealth,
     };
     const { error } = await supabase.from('users').update(dataToUpdate).eq('id', authUser.id);
     if(error) {
@@ -991,13 +992,14 @@ function AdminPageInternal() {
 
     if (profileType === 'business') {
       const profileData: BusinessProfile = {
-          companyName,
-          companySize: companySize as BusinessProfile['companySize'],
-          hiringGoals,
+          company_name: companyName,
+          company_size: companySize as BusinessProfile['company_size'],
+          hiring_goals: hiringGoals,
           industry,
+          id: authUser.id
       };
       // In Supabase, this would be an upsert
-      const { error } = await supabase.from('business_profiles').upsert({ id: authUser.id, ...profileData });
+      const { error } = await supabase.from('business_profiles').upsert({ ...profileData });
       if(error) {
           toast({ variant: 'destructive', title: 'Error', description: error.message });
       } else {
@@ -1007,12 +1009,13 @@ function AdminPageInternal() {
       const profileData: FreelancerProfile = {
           title: freelancerTitle,
           skills: freelancerSkills.split(',').map(s => s.trim()).filter(Boolean),
-          hourlyRate: Number(hourlyRate),
+          hourly_rate: Number(hourlyRate),
           availability: availability as FreelancerProfile['availability'],
-          specializedNiches,
-          advancedTraits,
+          specialized_niches: specializedNiches,
+          advanced_traits: advancedTraits,
+          id: authUser.id
       };
-      const { error } = await supabase.from('freelancer_profiles').upsert({ id: authUser.id, ...profileData });
+      const { error } = await supabase.from('freelancer_profiles').upsert({ ...profileData });
       if(error) {
           toast({ variant: 'destructive', title: 'Error', description: error.message });
       } else {
@@ -1093,14 +1096,12 @@ function AdminPageInternal() {
 
   const handleCreateCourse = async (newCourseData: Partial<Course>) => {
     if (!authUser || !user || !supabase) return;
-    const completeCourseData: Omit<Course, 'id' | 'createdAt'> = {
+    const completeCourseData: Omit<Course, 'id' | 'created_at' | 'instructor_name' | 'instructor_avatar'> = {
         ...newCourseData,
-        instructorId: authUser.id,
-        instructorName: user.name,
-        instructorAvatar: user.avatar,
+        instructor_id: authUser.id,
         rating: 0,
-        studentCount: 0,
-    } as Omit<Course, 'id' | 'createdAt'>;
+        student_count: 0,
+    } as Omit<Course, 'id' | 'created_at' | 'instructor_name' | 'instructor_avatar'>;
 
     const { data: inserted, error } = await supabase.from('courses').insert(completeCourseData).select();
     if(error) {
@@ -1238,10 +1239,10 @@ function AdminPageInternal() {
                             {userCourses.map(course => (
                                 <Card key={course.id}>
                                     <CardHeader className="flex-row gap-4 items-start">
-                                        <Image src={course.thumbnailUrl} alt={course.title} width={80} height={45} className="aspect-video rounded-md object-cover" />
+                                        <Image src={course.thumbnail_url} alt={course.title} width={80} height={45} className="aspect-video rounded-md object-cover" />
                                         <div className="flex-1">
                                             <CardTitle className="text-base">{course.title}</CardTitle>
-                                            <CardDescription>{course.studentCount} students</CardDescription>
+                                            <CardDescription>{course.student_count} students</CardDescription>
                                         </div>
                                     </CardHeader>
                                     <CardFooter>
@@ -1358,7 +1359,7 @@ function AdminPageInternal() {
                     <CardDescription>Get the official Sentrybase badge and show your support for the platform.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    {user?.isSentrybaseVerified ? (
+                    {user?.is_sentrybase_verified ? (
                         <Alert variant="default" className="border-green-500/50 bg-green-500/10 text-green-700 dark:text-green-400 [&>svg]:text-green-500">
                            <Feather className="h-4 w-4" />
                             <AlertTitle className="font-semibold text-green-800 dark:text-green-300">You are Sentrybase Verified!</AlertTitle>
@@ -1715,7 +1716,7 @@ function AdminPageInternal() {
                                     <div className="flex-1">
                                         <h3 className="font-semibold">{exp.title}</h3>
                                         <p className="text-sm text-muted-foreground">{exp.company}</p>
-                                        <p className="text-xs text-muted-foreground">{exp.startDate} - {exp.endDate || 'Present'}</p>
+                                        <p className="text-xs text-muted-foreground">{exp.start_date} - {exp.end_date || 'Present'}</p>
                                         <p className="mt-2 text-sm">{exp.description}</p>
                                     </div>
                                 </div>
@@ -1750,7 +1751,7 @@ function AdminPageInternal() {
                                     </div>
                                     <div className="flex-1">
                                         <h3 className="font-semibold">{cert.name}</h3>
-                                        <p className="text-sm text-muted-foreground">{cert.issuingOrganization} · Issued: {cert.date}</p>
+                                        <p className="text-sm text-muted-foreground">{cert.issuing_organization} · Issued: {cert.date}</p>
                                     </div>
                                 </div>
                             ))}
