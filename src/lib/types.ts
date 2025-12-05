@@ -74,8 +74,8 @@ export interface PortfolioItem {
   title: string;
   description: string;
   imageUrl: string;
-  objectFit?: 'contain' | 'cover';
   tags: string[];
+  objectFit?: 'contain' | 'cover';
   media_url?: string;
   project_url?: string;
   user_id?: AppUser['id'];
@@ -353,3 +353,5 @@ export interface Database {
     }
   }
 }
+export type User = AppUser;
+```

@@ -464,7 +464,7 @@ function PostComposer({ onPostCreated }: { onPostCreated: (newPost: PostType) =>
   
     useEffect(() => {
         const handleQuote = (event: Event) => {
-            const quoteEvent = event as CustomEvent;
+            const quoteEvent = event as CustomEvent<PostType>;
             setQuotedPost(quoteEvent.detail);
         };
         window.addEventListener('quotePost', handleQuote);
