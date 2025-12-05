@@ -798,9 +798,3 @@ export default function BoardroomsPage() {
     </ClientOnly>
   );
 }
-
-    
-
-    
-
-    
