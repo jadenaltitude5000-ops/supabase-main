@@ -46,6 +46,7 @@ export const portfolioItems: (PortfolioItem & { images?: string[] })[] = Array.f
       tags: ['UI/UX', 'Figma', 'Web Design', 'React', 'Next.js', 'Node.js', 'Firebase', 'Vercel'],
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
+      object_fit: 'cover',
       ...specificContent,
     } as PortfolioItem & { images: string[] };
 });

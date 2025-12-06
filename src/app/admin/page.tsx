@@ -341,7 +341,7 @@ function PortfolioCard({ item, layout }: { item: PortfolioItem; layout: Portfoli
             src={item.image_url}
             alt={item.title}
             width={500}
-            height={375} // Using a consistent aspect ratio (4:3) instead of random height
+            height={375}
             className={cn("h-auto w-full", objectFit === 'cover' ? "object-cover aspect-[4/3]" : "object-contain")}
             onContextMenu={(e) => e.preventDefault()}
           />

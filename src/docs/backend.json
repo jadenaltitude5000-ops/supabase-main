@@ -108,11 +108,12 @@
         "properties": {
             "title": { "type": "string" },
             "description": { "type": "string" },
-            "imageUrl": { "type": "string", "format": "uri" },
+            "image_url": { "type": "string", "format": "uri" },
+            "object_fit": { "type": "string", "enum": ["contain", "cover"] },
             "videoUrl": { "type": "string", "format": "uri" },
             "tags": { "type": "array", "items": { "type": "string" } }
         },
-        "required": ["title", "description", "imageUrl", "tags"]
+        "required": ["title", "description", "image_url", "tags"]
     },
     "DocumentItem": {
         "title": "Document Item",
@@ -162,7 +163,7 @@
         "image": { "type": "string", "format": "uri", "description": "URL to an image attached to the post." },
         "type": { "type": "string", "enum": ["default", "job_opportunity", "repost"]},
         "createdAt": { "type": "string", "format": "date-time" },
-        "voteCount": { "type": "number", "description": "Net score of upvotes minus downvotes." },
+        "likeCount": { "type": "number", "description": "Denormalized count of likes." },
         "replyCount": { "type": "number", "description": "Denormalized count of comments." },
         "author": {
           "type": "object",
@@ -625,17 +626,16 @@
       "schema": { "$ref": "#/entities/Post" },
       "description": "Stores replies to a specific post."
     },
-    "/votes/{voteId}": {
-      "schema": {
-        "type": "object",
-        "properties": {
-          "postId": { "type": "string" },
-          "userId": { "type": "string" },
-          "direction": { "type": "string", "enum": ["up", "down"] },
-          "timestamp": { "type": "string", "format": "date-time" }
-        }
-      },
-      "description": "Tracks a user's vote on a post. The document ID should be a composite key like `${postId}_${userId}`."
+    "/likes/{likeId}": {
+        "schema": {
+            "type": "object",
+            "properties": {
+                "postId": { "type": "string" },
+                "userId": { "type": "string" },
+                "timestamp": { "type": "string", "format": "date-time" }
+            }
+        },
+        "description": "Tracks which user has liked which post. The document ID should be a composite key like `${postId}_${userId}`."
     },
     "/users/{userId}/following/{followingId}": {
       "schema": { "$ref": "#/entities/Follow" },
