@@ -395,7 +395,7 @@ function PostComposer({ onPostCreated }: { onPostCreated: (newPost: PostType) =>
 
     setIsPosting(true);
     
-    const postData = {
+    const postData: Omit<PostType, 'id' | 'created_at' | 'author' | 'vote_count' | 'reply_count' | 'repost_count'> = {
         user_id: authUser.id,
         content,
         image: imageUrl,
@@ -407,7 +407,7 @@ function PostComposer({ onPostCreated }: { onPostCreated: (newPost: PostType) =>
     };
     
     try {
-        const { data, error } = await supabase.from('posts').insert(postData).select().single();
+        const { data, error } = await supabase.from('posts').insert(postData as any).select().single();
         if (error) throw error;
         
         const newPost: PostType = {
@@ -462,7 +462,7 @@ function PostComposer({ onPostCreated }: { onPostCreated: (newPost: PostType) =>
         <CardContent className="p-4 space-y-4">
             <div className="flex items-start gap-4">
                 <Avatar className="mt-1">
-                    <AvatarImage src={currentUser?.avatar || undefined} />
+                    <AvatarImage src={currentUser?.avatar ?? undefined} />
                     <AvatarFallback>{currentUser?.name.charAt(0) || 'U'}</AvatarFallback>
                 </Avatar>
                 <Textarea
