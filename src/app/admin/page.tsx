@@ -16,7 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useLanguage, Language } from '@/context/language-context';
 import { translations } from '@/lib/translations';
 import { useUser, useSupabase } from '@/lib/supabase/provider';
-import type { AppUser, PortfolioItem, DocumentItem, Experience, Certification, FreelancerProfile, BusinessProfile, Course, InstructorApplication, Database } from '@/lib/types';
+import type { AppUser, PortfolioItem, DocumentItem, Experience, Certification, FreelancerProfile, BusinessProfile, Course, InstructorApplication } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from '@/hooks/use-toast';
@@ -271,7 +271,7 @@ function PortfolioItemDialog({ item }: { item: PortfolioItem }) {
             alt={item.title}
             fill
             className={cn("object-contain", {
-              "object-cover": item.objectFit === 'cover'
+              "object-cover": item.object_fit === 'cover'
             })}
             onContextMenu={(e) => e.preventDefault()}
           />
@@ -316,7 +316,7 @@ function PortfolioCard({ item, layout }: { item: PortfolioItem; layout: Portfoli
         <DialogTrigger asChild>
           <Card className="flex items-center gap-4 p-4 transition-shadow hover:shadow-md cursor-pointer">
             <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-md bg-muted">
-              <Image src={item.image_url} alt={item.title} fill className={cn("object-contain", { "object-cover": item.objectFit === 'cover' })} />
+              <Image src={item.image_url} alt={item.title} fill className={cn("object-contain", { "object-cover": item.object_fit === 'cover' })} />
             </div>
             <div className="flex-1">
               <h3 className="font-semibold">{item.title}</h3>
@@ -341,7 +341,7 @@ function PortfolioCard({ item, layout }: { item: PortfolioItem; layout: Portfoli
             alt={item.title}
             width={500}
             height={375} // Using a consistent aspect ratio (4:3) instead of random height
-            className={cn("h-auto w-full", item.objectFit === 'cover' ? "object-cover aspect-[4/3]" : "object-contain")}
+            className={cn("h-auto w-full", item.object_fit === 'cover' ? "object-cover aspect-[4/3]" : "object-contain")}
             onContextMenu={(e) => e.preventDefault()}
           />
           <div className="absolute inset-0 cursor-pointer bg-black/60 opacity-0 transition-opacity group-hover:opacity-100">
@@ -376,12 +376,12 @@ function AddPortfolioItemDialog({ onSave }: { onSave: (item: Omit<PortfolioItem,
   const handleSave = async () => {
     if (!title || !description || !tags || !imageUrl) return;
     setIsSaving(true);
-    const newItem = {
+    const newItem: Omit<PortfolioItem, 'id' | 'author_id' | 'author' | 'author_avatar' | 'author_headline' | 'media_type' | 'created_at' | 'updated_at' | 'app_url' | 'video_url' | 'images' | 'user_id'> = {
       title,
       description,
       image_url: imageUrl,
       tags: tags.split(',').map(tag => tag.trim()),
-      objectFit,
+      object_fit: objectFit,
     };
 
     onSave(newItem);
@@ -798,7 +798,7 @@ function AdminPageInternal() {
         };
         setIsLoadingApplications(true);
         const { data, error } = await supabase.from('instructor_applications').select('*').eq('status', 'pending');
-        if(data) setApplications(data as any);
+        if(data) setApplications(data);
         setIsLoadingApplications(false);
     }
     fetchApplications();
@@ -819,8 +819,8 @@ function AdminPageInternal() {
         setExternalUrlName(user.external_url_name || '');
         setPortfolioItems((user.portfolio as unknown as PortfolioItem[]) || []);
         setDocuments((user.documents as unknown as DocumentItem[]) || []);
-        setExperiences((user.experiences as unknown as Experience[]) || [];
-        setCertifications((user.certifications as unknown as Certification[]) || [];
+        setExperiences((user.experiences as unknown as Experience[]) || []);
+        setCertifications((user.certifications as unknown as Certification[]) || []);
         setJobTitle(user.job_title || '');
         setCompany(user.company || '');
         setPronouns(user.pronouns || '');
@@ -1852,6 +1852,8 @@ export default function AdminPage() {
         </ClientOnly>
     );
 }
+
+    
 
     
 
