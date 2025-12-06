@@ -6,7 +6,7 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 const { glob } = require('glob');
 
 // --- CONFIGURATION ---
-const GEMINI_API_KEY = 'AIzaSyD7a9m0nK8M5-hvNGzkkw8jOth76StqnbQ'
+const GEMINI_API_KEY = 'AIzaSyAi6RxxH-m4pyWR1xnUV1ZBwWIwDdGMOeA'
 const FILE_PATTERNS = ['src/**/*.{ts,tsx}']; // Files to process
 const EXCLUDE_PATTERNS = ['**/*.d.ts'];      // Files to ignore
 // ---------------------
@@ -14,7 +14,7 @@ const EXCLUDE_PATTERNS = ['**/*.d.ts'];      // Files to ignore
 
 
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' }); // Use flash for speed
+const model = genAI.getGenerativeModel({ model: 'gemini-pro' }); // Use flash for speed
 
 const prompt = `
 You are an expert TypeScript developer tasked with a single, critical refactoring task.
