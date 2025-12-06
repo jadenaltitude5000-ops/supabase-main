@@ -211,7 +211,7 @@ function ChatPanel({ project, onToggleNotepad }: { project: Project | null; onTo
                     <div className="flex items-center space-x-1 p-1 rounded-md">
                         {(projectMembers || []).map(member => (
                             <Avatar key={member.user_id} className="h-8 w-8">
-                                <AvatarImage src={member.avatar || undefined} />
+                                <AvatarImage src={member.avatar ?? undefined} />
                                 <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
                             </Avatar>
                         ))}
@@ -224,7 +224,7 @@ function ChatPanel({ project, onToggleNotepad }: { project: Project | null; onTo
                         {messages?.map(msg => (
                             <div key={msg.id} className="flex items-start gap-3 mb-4">
                                 <Avatar className="h-8 w-8">
-                                    <AvatarImage src={msg.sender_avatar || undefined} />
+                                    <AvatarImage src={msg.sender_avatar ?? undefined} />
                                     <AvatarFallback>{msg.sender_name.charAt(0)}</AvatarFallback>
                                 </Avatar>
                                 <div>
@@ -558,7 +558,7 @@ function BoardroomsPageInternal() {
                     colleagues.map(colleague => (
                     <div key={colleague.id} className="flex items-center gap-3 p-2 rounded-md hover:bg-muted">
                         <Avatar className="h-10 w-10">
-                        <AvatarImage src={colleague.avatar || undefined} />
+                        <AvatarImage src={colleague.avatar ?? undefined} />
                         <AvatarFallback>{colleague.name.charAt(0)}</AvatarFallback>
                         </Avatar>
                         <div>
@@ -755,7 +755,7 @@ function InviteColleaguesDialog({ colleagues, project, existingMembers, existing
                             <div key={colleague.id} className="flex items-center justify-between p-2 rounded-md hover:bg-muted">
                                 <div className="flex items-center gap-3">
                                     <Avatar className="h-10 w-10">
-                                        <AvatarImage src={colleague.avatar || undefined} />
+                                        <AvatarImage src={colleague.avatar ?? undefined} />
                                         <AvatarFallback>{colleague.name.charAt(0)}</AvatarFallback>
                                     </Avatar>
                                     <div>
