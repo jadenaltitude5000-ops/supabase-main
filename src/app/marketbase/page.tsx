@@ -76,7 +76,7 @@ function PublisherDetailsDialog({ authorId }: { authorId: string }) {
             <DialogHeader>
                  <div className="flex flex-col items-center text-center gap-4">
                     <Avatar className="h-24 w-24">
-                        <AvatarImage src={author.avatar} alt={author.name} />
+                        <AvatarImage src={author.avatar ?? undefined} alt={author.name} />
                         <AvatarFallback>{author.name?.[0]}</AvatarFallback>
                     </Avatar>
                     <div className="space-y-1">
@@ -101,10 +101,10 @@ function PortfolioItemDialog({ item, onPrev, onNext, isPrevDisabled, isNextDisab
   const { toggleFullscreen } = useFullscreen();
 
   const MediaContent = () => {
-        switch(item.mediaType) {
+        switch(item.media_type) {
             case 'video':
                 return (
-                    <video controls src={item.videoUrl} className="w-full h-full object-contain rounded-lg">
+                    <video controls src={item.video_url || ''} className="w-full h-full object-contain rounded-lg">
                         Your browser does not support the video tag.
                     </video>
                 );
@@ -115,7 +115,7 @@ function PortfolioItemDialog({ item, onPrev, onNext, isPrevDisabled, isNextDisab
                         <h3 className="text-xl font-semibold">Live Application</h3>
                         <p className="text-muted-foreground mt-2">This project links to an external application.</p>
                         <Button asChild className="mt-6">
-                            <a href={item.appUrl} target="_blank" rel="noopener noreferrer">Visit App</a>
+                            <a href={item.app_url || '#'} target="_blank" rel="noopener noreferrer">Visit App</a>
                         </Button>
                     </div>
                 );
@@ -124,7 +124,7 @@ function PortfolioItemDialog({ item, onPrev, onNext, isPrevDisabled, isNextDisab
                 return (
                     <Carousel className="w-full h-full relative group">
                         <CarouselContent className="h-full">
-                        {(item.images || [item.imageUrl]).map((img, index) => (
+                        {(item.images || [item.image_url]).map((img, index) => (
                             <CarouselItem key={index} className="h-full flex items-center justify-center">
                                 <Image src={img} alt={`${item.title} - Image ${index + 1}`} width={1200} height={800} className="max-h-full w-auto object-contain rounded-md" />
                             </CarouselItem>
@@ -182,16 +182,16 @@ function PortfolioItemDialog({ item, onPrev, onNext, isPrevDisabled, isNextDisab
                                 <DialogTrigger asChild>
                                     <div className="flex items-center gap-3 cursor-pointer">
                                         <Avatar>
-                                            <AvatarImage src={item.authorAvatar} />
+                                            <AvatarImage src={item.author_avatar} />
                                             <AvatarFallback>{item.author.charAt(0)}</AvatarFallback>
                                         </Avatar>
                                         <div>
                                             <p className="font-semibold">{item.author}</p>
-                                            <p className="text-xs text-muted-foreground">{item.authorHeadline}</p>
+                                            <p className="text-xs text-muted-foreground">{item.author_headline}</p>
                                         </div>
                                     </div>
                                 </DialogTrigger>
-                                <PublisherDetailsDialog authorId={item.authorId} />
+                                <PublisherDetailsDialog authorId={item.author_id} />
                             </Dialog>
                         </CardHeader>
                         <CardContent>
@@ -221,8 +221,8 @@ function CatalogueTab() {
     
     const fetchData = async () => {
         setIsLoading(true);
-        const coursesPromise = supabase.from('courses').select('*').eq('instructorId', authUser.id);
-        const enrollmentsPromise = supabase.from('enrollments').select('*').eq('user_id', authUser.id);
+        const coursesPromise = supabase.from('courses').select('*').eq('instructor_id', authUser.id);
+        const enrollmentsPromise = supabase.from('course_enrollments').select('*').eq('user_id', authUser.id);
         
         const [coursesResult, enrollmentsResult] = await Promise.all([coursesPromise, enrollmentsPromise]);
         
@@ -290,10 +290,10 @@ function CatalogueTab() {
                  {enrollments && enrollments.length > 0 ? (
                     <div className="space-y-3">
                        {enrollments.map(enrollment => (
-                           <div key={enrollment.id} className="flex items-center justify-between p-2 border rounded-md">
-                               <span className="font-medium">Course: {enrollment.courseId}</span>
+                           <div key={enrollment.user_id + enrollment.course_id} className="flex items-center justify-between p-2 border rounded-md">
+                               <span className="font-medium">Course: {enrollment.course_id}</span>
                                <Button variant="outline" size="sm" asChild>
-                                <Link href={`/courses/${enrollment.courseId}`}>View</Link>
+                                <Link href={`/courses/${enrollment.course_id}`}>View</Link>
                                </Button>
                            </div>
                        ))}
@@ -332,7 +332,7 @@ function AddPortfolioItemDialog() {
             return;
         }
 
-        const { data: userProfile, error } = await supabase.from('users').select('*').eq('id', authUser.id).single();
+        const { data: userProfile, error } = await supabase.from('users').select('name, avatar, headline').eq('id', authUser.id).single();
         if (error || !userProfile) {
              toast({ variant: 'destructive', title: 'Error', description: 'Could not find your user profile.' });
             return;
@@ -341,16 +341,19 @@ function AddPortfolioItemDialog() {
         const newItem: Omit<PortfolioItem, 'id'> = {
             title,
             description,
-            imageUrl,
+            image_url: imageUrl,
             tags: tags.split(',').map(tag => tag.trim()),
-            authorId: authUser.id,
+            author_id: authUser.id,
             author: userProfile.name,
-            authorAvatar: userProfile.avatar,
-            authorHeadline: userProfile.headline,
-            mediaType: 'image', // For now, only image uploads are supported
+            author_avatar: userProfile.avatar!,
+            author_headline: userProfile.headline!,
+            media_type: 'image',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            objectFit: 'contain'
         };
 
-        const { error: insertError } = await supabase.from('portfolio').insert(newItem);
+        const { error: insertError } = await supabase.from('portfolio').insert(newItem as any);
 
         if(insertError) {
              toast({ variant: 'destructive', title: 'Error listing project', description: insertError.message });
@@ -398,7 +401,7 @@ function PortfolioTab() {
         const fetchItems = async () => {
             setIsLoading(true);
             const { data, error } = await supabase.from('portfolio').select('*').order('created_at', { ascending: false });
-            if(data) setPortfolioItems(data);
+            if(data) setPortfolioItems(data as PortfolioItem[]);
             setIsLoading(false);
         }
         fetchItems();
@@ -434,7 +437,7 @@ function PortfolioTab() {
                             <CardContent className="p-0 flex-1">
                                 <div className="relative aspect-[4/3] w-full overflow-hidden">
                                     <Image
-                                        src={item.imageUrl}
+                                        src={item.image_url}
                                         alt={item.title}
                                         fill
                                         className="object-cover transition-transform duration-300 group-hover:scale-105"
@@ -446,14 +449,14 @@ function PortfolioTab() {
                             </CardContent>
                             <CardFooter className="p-3 text-xs flex items-center gap-2">
                                 <Avatar className="h-6 w-6">
-                                    <AvatarImage src={item.authorAvatar} />
+                                    <AvatarImage src={item.author_avatar} />
                                     <AvatarFallback>{item.author ? item.author.charAt(0) : 'U'}</AvatarFallback>
                                 </Avatar>
                                 <Dialog>
                                     <DialogTrigger asChild>
                                         <span onClick={(e) => e.stopPropagation()} className="font-medium hover:underline cursor-pointer">{item.author}</span>
                                     </DialogTrigger>
-                                    <PublisherDetailsDialog authorId={item.authorId} />
+                                    <PublisherDetailsDialog authorId={item.author_id} />
                                 </Dialog>
                             </CardFooter>
                         </Card>
@@ -486,14 +489,14 @@ function AddSaasProductDialog() {
             return;
         }
 
-        const newProduct: Omit<SaaSProduct, 'id'> = {
+        const newProduct: Omit<SaaSProduct, 'id' | 'created_at'> = {
             name,
             description,
             price,
             tags: tags.split(',').map(t => t.trim()),
-            websiteUrl,
-            authorId: authUser.id,
-            authorName: userProfile.name,
+            website_url: websiteUrl,
+            author_id: authUser.id,
+            author_name: userProfile.name,
         };
         
         const { error: insertError } = await supabase.from('saas_products').insert(newProduct);
@@ -570,9 +573,9 @@ function SaasTab() {
                             </CardTitle>
                             <Dialog>
                                 <DialogTrigger asChild>
-                                    <Button variant="link" className="p-0 h-auto justify-start text-muted-foreground hover:text-primary">{product.authorName}</Button>
+                                    <Button variant="link" className="p-0 h-auto justify-start text-muted-foreground hover:text-primary">{product.author_name}</Button>
                                 </DialogTrigger>
-                                <PublisherDetailsDialog authorId={product.authorId} />
+                                <PublisherDetailsDialog authorId={product.author_id} />
                             </Dialog>
                         </CardHeader>
                         <CardContent className="flex-1">
@@ -583,7 +586,7 @@ function SaasTab() {
                         </CardContent>
                         <CardFooter className="flex justify-between items-center">
                             <span className="font-semibold text-primary">{product.price}</span>
-                            <Button asChild variant="outline"><a href={product.websiteUrl} target="_blank" rel="noopener noreferrer">View Product</a></Button>
+                            <Button asChild variant="outline"><a href={product.website_url} target="_blank" rel="noopener noreferrer">View Product</a></Button>
                         </CardFooter>
                     </Card>
                 ))}
@@ -615,16 +618,16 @@ function AddCourseDialog() {
             return;
         }
 
-        const newCourse: Omit<Course, 'id' | 'rating' | 'studentCount' | 'createdAt'> = {
+        const newCourse: Omit<Course, 'id' | 'rating' | 'student_count' | 'created_at'> = {
             title,
             description,
             price: parseFloat(price),
             tags: tags.split(',').map(t => t.trim()),
             level,
-            thumbnailUrl,
-            instructorId: authUser.id,
-            instructorName: userProfile.name,
-            instructorAvatar: userProfile.avatar,
+            thumbnail_url: thumbnailUrl,
+            instructor_id: authUser.id,
+            instructor_name: userProfile.name,
+            instructor_avatar: userProfile.avatar,
         };
 
         const { error: insertError } = await supabase.from('courses').insert(newCourse);
@@ -709,7 +712,7 @@ function CoursesTab() {
                         <CardContent className="p-0">
                         <div className="relative aspect-video w-full overflow-hidden">
                                 <Image
-                                    src={course.thumbnailUrl}
+                                    src={course.thumbnail_url}
                                     alt={course.title}
                                     fill
                                     className="object-cover transition-transform duration-300 group-hover:scale-105"
@@ -721,9 +724,9 @@ function CoursesTab() {
                             <h3 className="font-semibold text-base line-clamp-2 flex-1">{course.title}</h3>
                             <Dialog>
                                 <DialogTrigger asChild>
-                                    <Button variant="link" className="p-0 h-auto text-xs justify-start text-muted-foreground hover:text-primary mt-1">{course.instructorName}</Button>
+                                    <Button variant="link" className="p-0 h-auto text-xs justify-start text-muted-foreground hover:text-primary mt-1">{course.instructor_name}</Button>
                                 </DialogTrigger>
-                                <PublisherDetailsDialog authorId={course.instructorId} />
+                                <PublisherDetailsDialog authorId={course.instructor_id} />
                             </Dialog>
                             <div className="flex items-center justify-between mt-4">
                                 <p className="font-bold text-primary">${course.price}</p>
@@ -797,3 +800,5 @@ function MarketbasePage() {
 }
 
 export default MarketbasePage;
+
+    

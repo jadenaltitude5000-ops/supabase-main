@@ -364,7 +364,7 @@ function PortfolioCard({ item, layout }: { item: PortfolioItem; layout: Portfoli
   );
 }
 
-function AddPortfolioItemDialog({ onSave }: { onSave: (item: Omit<PortfolioItem, 'id' | 'author_id' | 'author' | 'author_avatar' | 'author_headline' | 'media_type'>) => void }) {
+function AddPortfolioItemDialog({ onSave }: { onSave: (item: Omit<PortfolioItem, 'id' | 'author_id' | 'author' | 'author_avatar' | 'author_headline' | 'media_type' | 'created_at' | 'updated_at' | 'app_url' | 'video_url' | 'images' | 'user_id'>) => void }) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [tags, setTags] = useState('');
@@ -819,8 +819,8 @@ function AdminPageInternal() {
         setExternalUrlName(user.external_url_name || '');
         setPortfolioItems((user.portfolio as unknown as PortfolioItem[]) || []);
         setDocuments((user.documents as unknown as DocumentItem[]) || []);
-        setExperiences((user.experiences as unknown as Experience[]) || []);
-        setCertifications((user.certifications as unknown as Certification[]) || []);
+        setExperiences((user.experiences as unknown as Experience[]) || [];
+        setCertifications((user.certifications as unknown as Certification[]) || [];
         setJobTitle(user.job_title || '');
         setCompany(user.company || '');
         setPronouns(user.pronouns || '');
@@ -1032,7 +1032,7 @@ function AdminPageInternal() {
   };
 
   
-  const handleAddPortfolioItem = async (itemData: Omit<PortfolioItem, 'id' | 'author_id' | 'author' | 'author_avatar' | 'author_headline' | 'media_type'>) => {
+  const handleAddPortfolioItem = async (itemData: Omit<PortfolioItem, 'id' | 'author_id' | 'author' | 'author_avatar' | 'author_headline' | 'media_type' | 'created_at' | 'updated_at' | 'app_url' | 'video_url' | 'images' | 'user_id'>) => {
     if (!authUser || !supabase) return;
      const newPortfolio = [...(user?.portfolio as unknown as PortfolioItem[] || []), { id: crypto.randomUUID(), ...itemData }];
     const { error } = await supabase.from('users').update({ portfolio: newPortfolio as any }).eq('id', authUser.id);
@@ -1852,5 +1852,7 @@ export default function AdminPage() {
         </ClientOnly>
     );
 }
+
+    
 
     

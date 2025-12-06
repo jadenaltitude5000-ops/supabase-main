@@ -59,7 +59,9 @@ export interface DocumentItem {
   uploaded_at: string | Date;
 }
 
-export type PortfolioItem = DB['public']['Tables']['portfolio']['Row'];
+export type PortfolioItem = DB['public']['Tables']['portfolio']['Row'] & {
+    objectFit?: 'contain' | 'cover';
+};
 
 
 // Interfaces for AIWorkmateRadar
@@ -92,3 +94,5 @@ export type AIWorkmateRadarOutput = {
     isFallback?: boolean;
   }[];
 };
+
+    
