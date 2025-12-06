@@ -10,27 +10,27 @@ export const portfolioItems: (PortfolioItem & { images?: string[] })[] = Array.f
     switch(itemType) {
         case 0: // Image gallery
             specificContent = {
-                mediaType: 'image',
+                media_type: 'image',
                 images: [
                     `https://picsum.photos/seed/${i + 100}/1200/800`,
                     `https://picsum.photos/seed/${i + 200}/1200/800`,
                     `https://picsum.photos/seed/${i + 300}/1200/800`,
                 ],
-                imageUrl: `https://picsum.photos/seed/${i + 100}/800/600` // Main image
+                image_url: `https://picsum.photos/seed/${i + 100}/800/600` // Main image
             };
             break;
         case 1: // Video
             specificContent = {
-                mediaType: 'video',
-                videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4', // Placeholder video
-                imageUrl: `https://picsum.photos/seed/${i + 100}/800/600`
+                media_type: 'video',
+                video_url: 'https://www.w3schools.com/html/mov_bbb.mp4', // Placeholder video
+                image_url: `https://picsum.photos/seed/${i + 100}/800/600`
             };
             break;
         case 2: // App Link
             specificContent = {
-                mediaType: 'app',
-                appUrl: 'https://sentry.io', // Placeholder app link
-                imageUrl: `https://picsum.photos/seed/${i + 100}/800/600`
+                media_type: 'app',
+                app_url: 'https://sentry.io', // Placeholder app link
+                image_url: `https://picsum.photos/seed/${i + 100}/800/600`
             };
             break;
     }
@@ -38,14 +38,12 @@ export const portfolioItems: (PortfolioItem & { images?: string[] })[] = Array.f
     return {
       id: `portfolio-${i + 1}`,
       title: `Project ${String.fromCharCode(65 + i)}`,
-      authorId: `user-${i+1}`,
+      author_id: `user-${i+1}`,
       author: 'Sentrybase User',
-      authorAvatar: `https://i.pravatar.cc/150?u=user${i+1}`,
-      authorHeadline: 'Digital Creator & Innovator',
+      author_avatar: `https://i.pravatar.cc/150?u=user${i+1}`,
+      author_headline: 'Digital Creator & Innovator',
       description: 'A detailed exploration of this project, focusing on modern UI/UX principles and scalable backend architecture. This project showcases a commitment to clean code and intuitive user experiences. The goal was to deliver a performant and aesthetically pleasing interface that meets both user needs and business objectives.',
       tags: ['UI/UX', 'Figma', 'Web Design', 'React', 'Next.js', 'Node.js', 'Firebase', 'Vercel'],
       ...specificContent,
     } as PortfolioItem & { images: string[] };
 });
-
-    

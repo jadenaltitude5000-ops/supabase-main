@@ -76,7 +76,7 @@ export async function generatePersonalizedFeed(
     const postType = getPostType(post);
     const interactionWeight = INTERACTION_WEIGHTS[postType];
 
-    const postDate = (post.created_at as any)?.toDate ? (post.created_at as any).toDate() : new Date();
+    const postDate = (post.created_at as any)?.toDate ? (post.created_at as any).toDate() : new Date(post.created_at);
     const recencyScore = calculateRecency(postDate);
 
     const relevanceScore = calculateRelevance(userVector, postVector);

@@ -59,27 +59,7 @@ export interface DocumentItem {
   uploaded_at: string | Date;
 }
 
-export interface PortfolioItem {
-  id: string;
-  title: string;
-  description: string;
-  image_url: string;
-  tags: string[];
-  objectFit?: 'contain' | 'cover';
-  author_id: string;
-  author: string;
-  author_avatar: string;
-  author_headline: string;
-  media_type: 'image' | 'video' | 'app';
-  images?: string[];
-  video_url?: string;
-  app_url?: string;
-  media_url?: string;
-  project_url?: string;
-  user_id?: AppUser['id'];
-  created_at?: string | Date;
-  updated_at?: string | Date;
-}
+export type PortfolioItem = DB['public']['Tables']['portfolio']['Row'];
 
 
 // Interfaces for AIWorkmateRadar

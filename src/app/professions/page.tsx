@@ -77,7 +77,7 @@ function ApplyForGigDialog({ gig, onApply }: { gig: PostType; onApply: (applicat
     return (
         <DialogContent>
             <DialogHeader>
-                <DialogTitle>Apply for: {gig.jobDetails?.title}</DialogTitle>
+                <DialogTitle>Apply for: {gig.job_details?.title}</DialogTitle>
                 <DialogDescription>Submit your application to {gig.author.name}.</DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
@@ -358,7 +358,7 @@ function PostComposer({ onPostCreated }: { onPostCreated: (newPost: PostType) =>
       const newPost: Partial<PostType> = {
           type: 'job_opportunity',
           content: postContent,
-          jobDetails: {
+          job_details: {
               title: gigDetails.title,
               budget: gigDetails.budget,
               keywords: gigDetails.keywords,
@@ -395,13 +395,13 @@ function PostComposer({ onPostCreated }: { onPostCreated: (newPost: PostType) =>
 
     setIsPosting(true);
     
-    const postData: Omit<PostType, 'id' | 'created_at' | 'author' | 'voteCount' | 'replyCount' | 'repostCount'> = {
-        userId: authUser.id,
+    const postData = {
+        user_id: authUser.id,
         content,
-        image: imageUrl || undefined,
-        audioUrl: audioUrl || undefined,
-        fileUrl: fileUrl || undefined,
-        fileName: fileName || undefined,
+        image: imageUrl || null,
+        audio_url: audioUrl || null,
+        file_url: fileUrl || null,
+        file_name: fileName || null,
         type: 'default',
         ...extraPostData,
     };
@@ -411,18 +411,18 @@ function PostComposer({ onPostCreated }: { onPostCreated: (newPost: PostType) =>
         if (error) throw error;
         
         const newPost: PostType = {
-            ...data,
+            ...(data as PostType),
             author: {
                 id: currentUser.id,
                 name: currentUser.name,
                 handle: currentUser.handle,
-                avatar: currentUser.avatar,
-                isAdmin: currentUser.isAdmin,
-                isSentrybaseVerified: currentUser.isSentrybaseVerified,
+                avatar: currentUser.avatar || '',
+                is_admin: currentUser.is_admin,
+                is_sentrybase_verified: currentUser.is_sentrybase_verified,
             },
-            voteCount: 0,
-            replyCount: 0,
-            repostCount: 0,
+            vote_count: 0,
+            reply_count: 0,
+            repost_count: 0,
         };
 
         onPostCreated(newPost);
@@ -462,7 +462,7 @@ function PostComposer({ onPostCreated }: { onPostCreated: (newPost: PostType) =>
         <CardContent className="p-4 space-y-4">
             <div className="flex items-start gap-4">
                 <Avatar className="mt-1">
-                    <AvatarImage src={currentUser?.avatar} />
+                    <AvatarImage src={currentUser?.avatar || undefined} />
                     <AvatarFallback>{currentUser?.name.charAt(0) || 'U'}</AvatarFallback>
                 </Avatar>
                 <Textarea
