@@ -33,7 +33,7 @@ import {
   useUser as useAuthUser,
   useSupabase,
 } from '@/lib/supabase/provider';
-import type { Plan, User } from '@/lib/types';
+import type { Plan, AppUser } from '@/lib/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Input } from '@/components/ui/input';
@@ -421,7 +421,7 @@ function BillingPageInternal() {
   const t = translations[language];
   const { user: authUser, isUserLoading } = useAuthUser();
   const supabase = useSupabase();
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AppUser | null>(null);
   const [isUserDocLoading, setIsUserDocLoading] = useState(true);
 
   useEffect(() => {
@@ -432,7 +432,7 @@ function BillingPageInternal() {
     const fetchUser = async () => {
       setIsUserDocLoading(true);
       const { data, error } = await supabase.from('users').select('*').eq('id', authUser.id).single();
-      if (data) setUser(data as User);
+      if (data) setUser(data as AppUser);
       setIsUserDocLoading(false);
     };
     fetchUser();
@@ -445,7 +445,7 @@ function BillingPageInternal() {
       return <DashboardSkeleton />
   }
 
-  const currentPlanId = user?.subscription ? (user.subscription as { planId: string }).planId : null;
+  const currentPlanId = (user?.subscription as { planId: string })?.planId;
   const isUserLoggedIn = !!authUser;
 
   const handleUpgrade = async (plan: Plan) => {
