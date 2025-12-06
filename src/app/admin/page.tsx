@@ -748,7 +748,7 @@ function AdminPageInternal() {
             .from('users')
             .select('*, freelancer_profiles(*), business_profiles(*)')
             .eq('id', authUser.id)
-            .single<AppUser>();
+            .single();
 
         if (error) {
             console.error("Error fetching user profile", error);
@@ -817,10 +817,10 @@ function AdminPageInternal() {
         setBusinessCardStealth(user.business_card_stealth || false);
         setExternalUrl(user.external_url || '');
         setExternalUrlName(user.external_url_name || '');
-        setPortfolioItems((user.portfolio as PortfolioItem[]) || []);
-        setDocuments((user.documents as DocumentItem[]) || []);
-        setExperiences((user.experiences as Experience[]) || []);
-        setCertifications((user.certifications as Certification[]) || []);
+        setPortfolioItems((user.portfolio as unknown as PortfolioItem[]) || []);
+        setDocuments((user.documents as unknown as DocumentItem[]) || []);
+        setExperiences((user.experiences as unknown as Experience[]) || []);
+        setCertifications((user.certifications as unknown as Certification[]) || []);
         setJobTitle(user.job_title || '');
         setCompany(user.company || '');
         setPronouns(user.pronouns || '');
@@ -1034,7 +1034,7 @@ function AdminPageInternal() {
   
   const handleAddPortfolioItem = async (itemData: Omit<PortfolioItem, 'id' | 'authorId' | 'author' | 'authorAvatar' | 'authorHeadline' | 'mediaType'>) => {
     if (!authUser || !supabase) return;
-     const newPortfolio = [...(user?.portfolio as PortfolioItem[] || []), { id: crypto.randomUUID(), ...itemData }];
+     const newPortfolio = [...(user?.portfolio as unknown as PortfolioItem[] || []), { id: crypto.randomUUID(), ...itemData }];
     const { error } = await supabase.from('users').update({ portfolio: newPortfolio as any }).eq('id', authUser.id);
     if(error) toast({ variant: 'destructive', title: "Error", description: "Could not save portfolio item." });
     else {
@@ -1051,7 +1051,7 @@ function AdminPageInternal() {
         file_type: name.split('.').pop() as any || 'pdf',
         uploaded_at: new Date(),
      };
-     const newDocuments = [...(user?.documents as DocumentItem[] || []), newDocument];
+     const newDocuments = [...(user?.documents as unknown as DocumentItem[] || []), newDocument];
      const { error } = await supabase.from('users').update({ documents: newDocuments as any }).eq('id', authUser.id);
      if(error) toast({ variant: 'destructive', title: "Error", description: "Could not save document." });
      else {
@@ -1062,7 +1062,7 @@ function AdminPageInternal() {
   
   const handleRemoveDocument = async (docToRemove: DocumentItem) => {
     if (!authUser || !supabase) return;
-    const newDocuments = (user?.documents as DocumentItem[] || []).filter(doc => doc.file_url !== docToRemove.file_url);
+    const newDocuments = (user?.documents as unknown as DocumentItem[] || []).filter(doc => doc.file_url !== docToRemove.file_url);
     const { error } = await supabase.from('users').update({ documents: newDocuments as any }).eq('id', authUser.id);
     if(error) toast({ variant: 'destructive', title: "Error", description: "Could not remove document." });
     else {
@@ -1073,7 +1073,7 @@ function AdminPageInternal() {
 
   const handleAddExperience = async (newItem: Experience) => {
     if (!authUser || !supabase) return;
-    const newExperiences = [...(user?.experiences as Experience[] || []), newItem];
+    const newExperiences = [...(user?.experiences as unknown as Experience[] || []), newItem];
     const { error } = await supabase.from('users').update({ experiences: newExperiences as any }).eq('id', authUser.id);
     if(error) toast({ variant: 'destructive', title: "Error", description: "Could not save experience." });
     else {
@@ -1084,7 +1084,7 @@ function AdminPageInternal() {
 
   const handleAddCertification = async (newItem: Certification) => {
     if (!authUser || !supabase) return;
-    const newCertifications = [...(user?.certifications as Certification[] || []), newItem];
+    const newCertifications = [...(user?.certifications as unknown as Certification[] || []), newItem];
     const { error } = await supabase.from('users').update({ certifications: newCertifications as any }).eq('id', authUser.id);
     if(error) toast({ variant: 'destructive', title: "Error", description: "Could not save certification." });
     else {
