@@ -343,7 +343,7 @@ function PortfolioCard({ item, layout }: { item: PortfolioItem; layout: Portfoli
             alt={item.title}
             width={500}
             height={375}
-            className={cn("h-auto w-full", objectFit === 'cover' ? "object-cover aspect-[4/3]" : "object-contain")}
+            className={cn("h-auto w-full", item.object_fit === 'cover' ? "object-cover aspect-[4/3]" : "object-contain")}
             onContextMenu={(e) => e.preventDefault()}
           />
           <div className="absolute inset-0 cursor-pointer bg-black/60 opacity-0 transition-opacity group-hover:opacity-100">
@@ -366,7 +366,7 @@ function PortfolioCard({ item, layout }: { item: PortfolioItem; layout: Portfoli
   );
 }
 
-function AddPortfolioItemDialog({ onSave }: { onSave: (item: Omit<PortfolioItem, 'id' | 'created_at' | 'updated_at' | 'author_id' | 'author_name' | 'author_avatar' | 'author_headline' | 'user_id' | 'media_type' | 'images' | 'app_url' | 'video_url'>) => void }) {
+function AddPortfolioItemDialog({ onSave }: { onSave: (item: Omit<PortfolioItem, 'id' | 'created_at' | 'updated_at' | 'author_id' | 'author' | 'author_avatar' | 'author_headline' | 'user_id' | 'media_type' | 'images' | 'app_url' | 'video_url'>) => void }) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [tags, setTags] = useState('');
@@ -1034,7 +1034,7 @@ function AdminPageInternal() {
   };
 
   
-  const handleAddPortfolioItem = async (itemData: Omit<PortfolioItem, 'id' | 'created_at' | 'updated_at' | 'author_id' | 'author_name' | 'author_avatar' | 'author_headline' | 'user_id' | 'media_type' | 'images' | 'app_url' | 'video_url'>) => {
+  const handleAddPortfolioItem = async (itemData: Omit<PortfolioItem, 'id' | 'created_at' | 'updated_at' | 'author_id' | 'author' | 'author_avatar' | 'author_headline' | 'user_id' | 'media_type' | 'images' | 'app_url' | 'video_url'>) => {
     if (!authUser || !supabase || !user) return;
      const newPortfolioItem: PortfolioItem = {
         id: crypto.randomUUID(),
@@ -1043,7 +1043,7 @@ function AdminPageInternal() {
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         author_id: user.id,
-        author_name: user.name,
+        author: user.name,
         author_avatar: user.avatar || '',
         author_headline: user.headline || '',
         media_type: 'image', // Assuming only image for now
@@ -1287,7 +1287,7 @@ function AdminPageInternal() {
                     <MediaUploader onUpload={handleAvatarUpload}>
                         <div className="relative group">
                             <Avatar className="w-24 h-24 border">
-                                <AvatarImage src={avatar || undefined} alt={name} />
+                                <AvatarImage src={avatar ?? undefined} alt={name} />
                                 <AvatarFallback className="bg-gradient-to-tr from-pink-500 to-yellow-500 text-white">
                                     {name ? name.charAt(0) : <UserIcon className="w-12 h-12" />}
                                 </AvatarFallback>
@@ -1342,7 +1342,7 @@ function AdminPageInternal() {
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="location">Location</Label>
-                        <Select value={country ?? undefined} onValueChange={setCountry}>
+                        <Select value={country ?? ''} onValueChange={setCountry}>
                             <SelectTrigger id="location">
                                 <SelectValue placeholder="Select your country" />
                             </SelectTrigger>
@@ -1437,7 +1437,7 @@ function AdminPageInternal() {
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="company-size">Company Size</Label>
-                                    <Select value={companySize ?? undefined} onValueChange={(v) => setCompanySize(v as any)}>
+                                    <Select value={companySize ?? ''} onValueChange={(v) => setCompanySize(v as any)}>
                                         <SelectTrigger id="company-size">
                                             <SelectValue placeholder="Select company size" />
                                         </SelectTrigger>
@@ -1503,7 +1503,7 @@ function AdminPageInternal() {
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="availability">Availability</Label>
-                                    <Select value={availability ?? undefined} onValueChange={(v) => setAvailability(v as any)}>
+                                    <Select value={availability ?? ''} onValueChange={(v) => setAvailability(v as any)}>
                                         <SelectTrigger id="availability">
                                             <SelectValue placeholder="Select your availability" />
                                         </SelectTrigger>
