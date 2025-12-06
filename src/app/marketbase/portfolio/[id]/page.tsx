@@ -69,10 +69,11 @@ export default function PortfolioItemPage() {
 
         const fetchItem = async () => {
             setIsLoading(true);
+            const itemId = Array.isArray(id) ? id[0] : id;
             const { data, error } = await supabase
                 .from('portfolio')
                 .select('*')
-                .eq('id', id)
+                .eq('id', itemId)
                 .single();
             
             if (error || !data) {
@@ -102,10 +103,10 @@ export default function PortfolioItemPage() {
     }
     
     const MediaContent = () => {
-        switch(item.mediaType) {
+        switch(item.media_type) {
             case 'video':
                 return (
-                    <video controls src={item.videoUrl} className="w-full h-full object-contain rounded-lg">
+                    <video controls src={item.video_url || ''} className="w-full h-full object-contain rounded-lg">
                         Your browser does not support the video tag.
                     </video>
                 );
@@ -116,7 +117,7 @@ export default function PortfolioItemPage() {
                         <h3 className="text-xl font-semibold">Live Application</h3>
                         <p className="text-muted-foreground mt-2">This project links to an external application.</p>
                         <Button asChild className="mt-6">
-                            <a href={item.appUrl} target="_blank" rel="noopener noreferrer">Visit App</a>
+                            <a href={item.app_url || '#'} target="_blank" rel="noopener noreferrer">Visit App</a>
                         </Button>
                     </div>
                 );
@@ -125,7 +126,7 @@ export default function PortfolioItemPage() {
                 return (
                     <Carousel className="w-full h-full relative group">
                         <CarouselContent className="h-full">
-                        {(item.images || [item.imageUrl]).map((img, index) => (
+                        {(item.images || [item.image_url]).map((img, index) => (
                             <CarouselItem key={index} className="h-full flex items-center justify-center">
                                 <Image src={img} alt={`${item.title} - Image ${index + 1}`} width={1200} height={800} className="max-h-full w-auto object-contain rounded-md" />
                             </CarouselItem>
@@ -161,12 +162,12 @@ export default function PortfolioItemPage() {
                         <h1 className="text-3xl font-headline font-normal tracking-tight">{item.title}</h1>
                          <div className="flex items-center gap-3 pt-2">
                             <Avatar className="h-10 w-10">
-                                <AvatarImage src={item.authorAvatar} />
+                                <AvatarImage src={item.author_avatar} />
                                 <AvatarFallback>{item.author.charAt(0)}</AvatarFallback>
                             </Avatar>
                             <div>
                                 <p className="font-semibold text-base">{item.author}</p>
-                                <p className="text-xs text-muted-foreground">{item.authorHeadline}</p>
+                                <p className="text-xs text-muted-foreground">{item.author_headline}</p>
                             </div>
                         </div>
                     </div>
@@ -192,7 +193,7 @@ export default function PortfolioItemPage() {
                              </CardContent>
                              <CardFooter className="flex gap-2">
                                 <Button asChild className="flex-1">
-                                    <Link href={`/u/${item.authorId}`}>View Profile</Link>
+                                    <Link href={`/u/${item.author_id}`}>View Profile</Link>
                                 </Button>
                                 <Button variant="outline" className="flex-1">
                                     <Mail className="mr-2 h-4 w-4" /> Message

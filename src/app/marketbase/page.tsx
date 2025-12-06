@@ -290,7 +290,7 @@ function CatalogueTab() {
                  {enrollments && enrollments.length > 0 ? (
                     <div className="space-y-3">
                        {enrollments.map(enrollment => (
-                           <div key={enrollment.user_id + enrollment.course_id} className="flex items-center justify-between p-2 border rounded-md">
+                           <div key={`${enrollment.user_id}-${enrollment.course_id}`} className="flex items-center justify-between p-2 border rounded-md">
                                <span className="font-medium">Course: {enrollment.course_id}</span>
                                <Button variant="outline" size="sm" asChild>
                                 <Link href={`/courses/${enrollment.course_id}`}>View</Link>
@@ -340,7 +340,7 @@ function AddPortfolioItemDialog() {
             return;
         }
         
-        const newItem: Omit<PortfolioItem, 'id'> = {
+        const newItem: Omit<PortfolioItem, 'id' | 'created_at' | 'updated_at'> = {
             title,
             description,
             image_url: imageUrl,
@@ -350,13 +350,11 @@ function AddPortfolioItemDialog() {
             author_avatar: userProfile.avatar!,
             author_headline: userProfile.headline!,
             media_type: 'image',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
             object_fit: objectFit,
             app_url: null,
             video_url: null,
             images: null,
-            user_id: null,
+            user_id: authUser.id,
         };
 
         const { error: insertError } = await supabase.from('portfolio').insert(newItem as any);
