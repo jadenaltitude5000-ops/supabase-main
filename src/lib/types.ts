@@ -16,17 +16,7 @@ export type AppUser = DB['public']['Tables']['users']['Row'] & {
 };
 
 // Type for a Campaign, as used in ad-studio page
-export interface Campaign {
-  id: string;
-  name: string;
-  status: 'draft' | 'active' | 'paused';
-  start_date: string;
-  end_date: string | null;
-  budget?: number;
-  type: 'search' | 'social' | 'display';
-  spend?: number;
-  conversions?: number;
-}
+export type Campaign = DB['public']['Tables']['campaigns']['Row'];
 
 // Type for a Job, used in the file-uploader and other places
 export interface Job {

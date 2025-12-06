@@ -195,7 +195,7 @@ function AdStudioPageInternal() {
                     <TableRow>
                       <TableHead>{t.campaignName}</TableHead>
                       <TableHead>{t.status}</TableHead>
-                      <TableHead>{t.type}</TableHead>
+                      <TableHead>{t.adType}</TableHead>
                       <TableHead>{t.spend}</TableHead>
                       <TableHead>{t.conversions}</TableHead>
                       <TableHead>
@@ -224,7 +224,7 @@ function AdStudioPageInternal() {
                           <TableCell>
                             <Badge variant={campaign.status?.toLowerCase() === 'active' ? 'default' : 'secondary'}>{campaign.status}</Badge>
                           </TableCell>
-                          <TableCell>{campaign.type}</TableCell>
+                          <TableCell>{campaign.ad_type}</TableCell>
                           <TableCell>{campaign.spend}</TableCell>
                           <TableCell>{campaign.conversions}</TableCell>
                           <TableCell>
