@@ -44,6 +44,8 @@ export const portfolioItems: (PortfolioItem & { images?: string[] })[] = Array.f
       author_headline: 'Digital Creator & Innovator',
       description: 'A detailed exploration of this project, focusing on modern UI/UX principles and scalable backend architecture. This project showcases a commitment to clean code and intuitive user experiences. The goal was to deliver a performant and aesthetically pleasing interface that meets both user needs and business objectives.',
       tags: ['UI/UX', 'Figma', 'Web Design', 'React', 'Next.js', 'Node.js', 'Firebase', 'Vercel'],
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
       ...specificContent,
     } as PortfolioItem & { images: string[] };
 });

@@ -139,11 +139,11 @@ export function WorkmateRadarForm() {
     };
     const fetchUser = async () => {
         setIsCurrentUserLoading(true);
-        const { data } = await supabase.from('users').select('*, freelancerProfile:freelancer_profiles(*)').eq('id', authUser.id).single();
+        const { data } = await supabase.from('users').select('*, freelancer_profiles(*)').eq('id', authUser.id).single();
         if (data) {
             const userData: AppUser = {
                 ...data,
-                freelancerProfile: Array.isArray(data.freelancerProfile) ? data.freelancerProfile[0] : data.freelancerProfile
+                freelancer_profiles: Array.isArray(data.freelancer_profiles) ? data.freelancer_profiles[0] : data.freelancer_profiles
             };
             setCurrentUser(userData);
         }
@@ -257,7 +257,7 @@ export function WorkmateRadarForm() {
     }
     
     // Construct a descriptive string from the user's profile
-    const userTraits = (currentUser.freelancerProfile?.advanced_traits || []).join(', ');
+    const userTraits = (currentUser.freelancer_profiles?.advanced_traits || []).join(', ');
     let autoProfile = `This user's headline is "${currentUser.headline}". Their bio is: "${currentUser.bio}". Their skills include: ${(currentUser.skills || []).join(', ')}.`;
     if (userTraits) {
         autoProfile += ` Their work style and traits include: ${userTraits}.`;

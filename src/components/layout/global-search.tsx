@@ -48,16 +48,7 @@ function BookmarksPanel() {
             if (error) {
                 console.error("Error fetching bookmarks:", error);
             } else if (data) {
-                // This is a rough mapping. You'd need to adjust your DB schema
-                // or data transformation logic to match your 'BookmarkType'
-                const mappedData = data.map((b: any) => ({
-                    id: b.id,
-                    type: b.type,
-                    refId: b.ref_id,
-                    savedAt: new Date(b.saved_at),
-                    content: b.content || { title: 'Saved Item', description: 'No description' }
-                }));
-                setBookmarks(mappedData as BookmarkType[]);
+                setBookmarks(data as BookmarkType[]);
             }
             setIsLoading(false);
         };
@@ -84,15 +75,15 @@ function BookmarksPanel() {
                         {bookmarks.map(bookmark => (
                             <div key={bookmark.id} className="flex items-center gap-4 rounded-md border p-3">
                                 <Avatar className="h-10 w-10">
-                                    <AvatarImage src={bookmark.content.image} />
-                                    <AvatarFallback>{bookmark.content.title.charAt(0)}</AvatarFallback>
+                                    <AvatarImage src={(bookmark.content as any)?.image} />
+                                    <AvatarFallback>{(bookmark.content as any)?.title?.charAt(0)}</AvatarFallback>
                                 </Avatar>
                                 <div className="flex-1 overflow-hidden">
-                                    <p className="font-semibold truncate">{bookmark.content.title}</p>
-                                    <p className="text-xs text-muted-foreground truncate">{bookmark.content.description}</p>
+                                    <p className="font-semibold truncate">{(bookmark.content as any)?.title}</p>
+                                    <p className="text-xs text-muted-foreground truncate">{(bookmark.content as any)?.description}</p>
                                 </div>
                                 <Button variant="secondary" size="sm" asChild>
-                                    <Link href={`/${bookmark.type}s/${bookmark.refId}`}>View</Link>
+                                    <Link href={`/${bookmark.type}s/${bookmark.ref_id}`}>View</Link>
                                 </Button>
                             </div>
                         ))}
@@ -192,16 +183,16 @@ export function NotificationsPanel() {
                 ) : notifications && notifications.length > 0 ? (
                     <div className="space-y-1">
                         {notifications.map(notif => (
-                            <div key={notif.id} className={cn("flex items-start gap-3 rounded-md p-3 transition-colors hover:bg-accent", !notif.isRead && "bg-accent/50")}>
-                                <div className="mt-1 h-2 w-2 rounded-full bg-primary" style={{ visibility: notif.isRead ? 'hidden' : 'visible' }} />
+                            <div key={notif.id} className={cn("flex items-start gap-3 rounded-md p-3 transition-colors hover:bg-accent", !notif.is_read && "bg-accent/50")}>
+                                <div className="mt-1 h-2 w-2 rounded-full bg-primary" style={{ visibility: notif.is_read ? 'hidden' : 'visible' }} />
                                 <div className="flex-1 space-y-1">
                                     <p className="text-sm font-medium">{notif.title}</p>
                                     <p className="text-sm text-muted-foreground">{notif.description}</p>
                                     <p className="text-xs text-muted-foreground">
-                                        {notif.createdAt ? formatDistanceToNow(new Date(notif.createdAt as string), { addSuffix: true }) : ''}
+                                        {notif.created_at ? formatDistanceToNow(new Date(notif.created_at as string), { addSuffix: true }) : ''}
                                     </p>
                                 </div>
-                                {!notif.isRead && (
+                                {!notif.is_read && (
                                      <Button variant="ghost" size="sm" onClick={() => handleMarkAsRead(notif.id)}>Mark as Read</Button>
                                 )}
                             </div>
@@ -244,8 +235,8 @@ function Sorter() {
             if(postsData) setAllPosts(postsData as Post[]);
             
             // This assumes a 'projects' table exists. Adjust if needed.
-            // const { data: projectsData } = await supabase.from('projects').select('*').limit(50);
-            // if(projectsData) setAllProjects(projectsData as Project[]);
+            const { data: projectsData } = await supabase.from('projects').select('*').limit(50);
+            if(projectsData) setAllProjects(projectsData as Project[]);
 
             if(authUser) {
                 const { data: colleaguesData } = await supabase.from('colleagues').select('colleague_id').eq('user_id', authUser.id);
@@ -311,7 +302,7 @@ function Sorter() {
     const filteredProjects = useMemo(() => {
         if (!searchQuery) return allProjects || [];
         return (allProjects || []).filter(project => 
-            project.projectName.toLowerCase().includes(searchQuery.toLowerCase())
+            project.project_name.toLowerCase().includes(searchQuery.toLowerCase())
         );
     }, [allProjects, searchQuery]);
 
@@ -343,7 +334,7 @@ function Sorter() {
                                 {filteredColleagues.slice(0, 5).map(user => (
                                     <CommandItem key={user.id} onSelect={() => runCommand(() => router.push(`/u/${user.handle}`))}>
                                         <Avatar className="mr-2 h-6 w-6">
-                                            <AvatarImage src={user.avatar} />
+                                            <AvatarImage src={user.avatar || undefined} />
                                             <AvatarFallback>{user.name ? user.name.charAt(0) : 'S'}</AvatarFallback>
                                         </Avatar>
                                         <span>{user.name}</span>
@@ -358,7 +349,7 @@ function Sorter() {
                                 {filteredPeople.slice(0, 5).map(user => (
                                     <CommandItem key={user.id} onSelect={() => runCommand(() => router.push(`/u/${user.handle}`))}>
                                         <Avatar className="mr-2 h-6 w-6">
-                                            <AvatarImage src={user.avatar} />
+                                            <AvatarImage src={user.avatar || undefined} />
                                             <AvatarFallback>{user.name ? user.name.charAt(0) : 'S'}</AvatarFallback>
                                         </Avatar>
                                         <span>{user.name}</span>
@@ -384,7 +375,7 @@ function Sorter() {
                                {filteredProjects.slice(0, 5).map(project => (
                                     <CommandItem key={project.id} onSelect={() => runCommand(() => router.push('/boardrooms'))}>
                                         <span className="mr-2">-</span>
-                                        <span className="whitespace-normal">{project.projectName}</span>
+                                        <span className="whitespace-normal">{project.project_name}</span>
                                     </CommandItem>
                                ))}
                              </CommandGroup>

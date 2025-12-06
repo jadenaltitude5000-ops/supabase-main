@@ -2,9 +2,9 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect } from 'react';
-import { createBrowserClient } from '@supabase/ssr';
-import type { SupabaseClient, User } from '@supabase/supabase-js';
-import type { Database } from '../database.types';
+import { SupabaseClient, User } from '@supabase/supabase-js';
+import { Database } from '../database.types';
+import { createBrowserClient } from './client';
 import { useRouter } from 'next/navigation';
 
 type SupabaseContextType = {
@@ -16,36 +16,31 @@ type SupabaseContextType = {
 const SupabaseContext = createContext<SupabaseContextType | undefined>(undefined);
 
 export const SupabaseProvider = ({ children }: { children: React.ReactNode }) => {
-  const [supabase] = useState(() =>
-    createBrowserClient<Database>(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    )
-  );
+  const supabase = createBrowserClient();
   const [user, setUser] = useState<User | null>(null);
   const [isUserLoading, setIsUserLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
-    const getSession = async () => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      setUser(session?.user ?? null);
+      setIsUserLoading(false);
+      
+      if (event === 'SIGNED_OUT') {
+        router.push('/signin');
+      }
+    });
+
+    // Fetch initial session
+    const getInitialSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       setUser(session?.user ?? null);
       setIsUserLoading(false);
     };
-    getSession();
+    getInitialSession();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setUser(session?.user ?? null);
-        setIsUserLoading(false);
-        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-          // You can add logic here if needed
-        }
-        if (event === 'SIGNED_OUT') {
-          router.push('/signin');
-        }
-      }
-    );
 
     return () => {
       subscription.unsubscribe();

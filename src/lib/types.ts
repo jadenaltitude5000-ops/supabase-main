@@ -5,7 +5,6 @@ import type { Database as DB } from './database.types';
 export type Database = DB;
 export type Json = DB['public']['Tables']['users']['Row']['certifications'];
 
-
 // Re-exporting generated types with corrected casing for easier use
 export type AppUser = DB['public']['Tables']['users']['Row'] & {
     freelancer_profiles?: FreelancerProfile | null;
@@ -94,5 +93,3 @@ export type AIWorkmateRadarOutput = {
     isFallback?: boolean;
   }[];
 };
-
-    

@@ -77,7 +77,7 @@ function ApplyForGigDialog({ gig, onApply }: { gig: PostType; onApply: (applicat
     return (
         <DialogContent>
             <DialogHeader>
-                <DialogTitle>Apply for: {gig.job_details?.title}</DialogTitle>
+                <DialogTitle>Apply for: {(gig.job_details as any)?.title}</DialogTitle>
                 <DialogDescription>Submit your application to {gig.author.name}.</DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
@@ -398,10 +398,10 @@ function PostComposer({ onPostCreated }: { onPostCreated: (newPost: PostType) =>
     const postData = {
         user_id: authUser.id,
         content,
-        image: imageUrl || null,
-        audio_url: audioUrl || null,
-        file_url: fileUrl || null,
-        file_name: fileName || null,
+        image: imageUrl,
+        audio_url: audioUrl,
+        file_url: fileUrl,
+        file_name: fileName,
         type: 'default',
         ...extraPostData,
     };
