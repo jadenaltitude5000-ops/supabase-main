@@ -476,7 +476,7 @@ function ClientView() {
     }, [currentUser]);
 
     const hasActiveSubscription = useMemo(() => {
-        const planId = currentUser?.subscription?.planId;
+        const planId = (currentUser?.subscription as { planId: string })?.planId;
         return !!(planId && planId !== 'plan-free');
     }, [currentUser]);
     
@@ -843,9 +843,9 @@ function FreelancerView() {
         if (!currentUser) return { progress: 0, hasBio: false, hasJobTitle: false, hasEnoughSkills: false, hasExperience: false, hasSkillSyncInfo: false };
         const checks = {
             hasBio: !!currentUser.bio,
-            hasJobTitle: !!currentUser.jobTitle,
+            hasJobTitle: !!currentUser.job_title,
             hasEnoughSkills: (currentUser.skills?.length || 0) >= 7,
-            hasExperience: (currentUser.experiences?.length || 0) > 0,
+            hasExperience: (currentUser.experiences as any[] | null)?.length || 0 > 0,
             hasSkillSyncInfo: !!(freelancerProfile?.title && freelancerProfile?.availability),
         };
         const completedCount = Object.values(checks).filter(Boolean).length;
@@ -873,11 +873,12 @@ function FreelancerView() {
 
     // Placeholder for login activity calculation
     const loginActivity = useMemo(() => {
-        if (!currentUser || !currentUser.loginHistory || accountAge <= 0) return 0;
-        const relevantLogins = currentUser.loginHistory.filter(login => 
-            differenceInDays(new Date(), new Date(login as string)) <= 30
+        if (!currentUser || !(currentUser.login_history as any[]) || accountAge <= 0) return 0;
+        const loginHistory = currentUser.login_history as string[];
+        const relevantLogins = loginHistory.filter(login => 
+            differenceInDays(new Date(), new Date(login)) <= 30
         );
-        const uniqueLoginDays = new Set(relevantLogins.map(login => new Date(login as string).toDateString())).size;
+        const uniqueLoginDays = new Set(relevantLogins.map(login => new Date(login).toDateString())).size;
         return (uniqueLoginDays / Math.min(accountAge, 30)) * 100;
     }, [currentUser, accountAge]);
 
@@ -897,13 +898,14 @@ function FreelancerView() {
 
         try {
             const freelancerProfileData: FreelancerProfile = {
+                id: currentUser.id,
                 name: currentUser.name || '',
                 headline: currentUser.headline || '',
                 bio: currentUser.bio || '',
                 skills: currentUser.skills || [],
                 experience_years: currentUser.experience_years,
                 email: currentUser.email || '',
-            };
+            } as any;
 
             const input: SkillSyncNetInput = {
                 context: "freelancer_seeking_project",
@@ -1195,3 +1197,4 @@ export default function SkillSyncNetPage() {
 }
 
     
+
