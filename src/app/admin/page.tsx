@@ -1032,7 +1032,7 @@ function AdminPageInternal() {
   };
 
   
-  const handleAddPortfolioItem = async (itemData: Omit<PortfolioItem, 'id' | 'authorId' | 'author' | 'authorAvatar' | 'authorHeadline' | 'mediaType'>) => {
+  const handleAddPortfolioItem = async (itemData: Omit<PortfolioItem, 'id' | 'author_id' | 'author' | 'author_avatar' | 'author_headline' | 'media_type'>) => {
     if (!authUser || !supabase) return;
      const newPortfolio = [...(user?.portfolio as unknown as PortfolioItem[] || []), { id: crypto.randomUUID(), ...itemData }];
     const { error } = await supabase.from('users').update({ portfolio: newPortfolio as any }).eq('id', authUser.id);
@@ -1852,3 +1852,5 @@ export default function AdminPage() {
         </ClientOnly>
     );
 }
+
+    
