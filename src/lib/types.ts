@@ -1,184 +1,84 @@
-// This file can be used for shared TypeScript types across your app.
-// It defines the shape of your database tables and other common types.
 
 import { z } from 'zod';
 import type { Database as DB } from './database.types';
 
-declare global {
-    type Database = DB;
-}
-export type { Database }; // Export the Database type for use in other files
+export type Database = DB;
+export type Json = DB['public']['Tables']['users']['Row']['certifications'];
 
-// Type for a User profile, combining Supabase Auth User with our public 'users' table
+
+// Re-exporting generated types with corrected casing for easier use
 export type AppUser = DB['public']['Tables']['users']['Row'] & {
     freelancer_profiles?: FreelancerProfile | null;
     business_profiles?: BusinessProfile | null;
 };
-
-// Type for a Campaign, as used in ad-studio page
 export type Campaign = DB['public']['Tables']['campaigns']['Row'];
-
-// Type for a Job, used in the file-uploader and other places
-export interface Job {
+export type Experience = DB['public']['Tables']['experiences']['Row'];
+export type Certification = DB['public']['Tables']['certifications']['Row'];
+export type FreelancerProfile = DB['public']['Tables']['freelancer_profiles']['Row'];
+export type BusinessProfile = DB['public']['Tables']['business_profiles']['Row'];
+export type Course = DB['public']['Tables']['courses']['Row'];
+export type InstructorApplication = DB['public']['Tables']['instructor_applications']['Row'];
+export type Project = DB['public']['Tables']['projects']['Row'] & { role?: 'creator' | 'member' };
+export type ProjectMember = DB['public']['Tables']['project_members']['Row'] & { name: string; avatar: string };
+export type Invitation = DB['public']['Tables']['project_invitations']['Row'];
+export type ProjectMessage = DB['public']['Tables']['project_messages']['Row'];
+export type Post = DB['public']['Tables']['posts']['Row'] & {
+    author: {
+        id: string;
+        name: string;
+        handle: string;
+        avatar: string;
+        is_admin?: boolean | null;
+        is_sentrybase_verified?: boolean | null;
+        hasActiveSubscription?: boolean;
+    };
+    objectFit?: 'contain' | 'cover';
+    isReply?: boolean;
+};
+export type Vote = DB['public']['Tables']['votes']['Row'];
+export type Bookmark = DB['public']['Tables']['bookmarks']['Row'];
+export type Notification = DB['public']['Tables']['notifications']['Row'];
+export type CourseEnrollment = DB['public']['Tables']['course_enrollments']['Row'];
+export type Plan = {
   id: string;
+  name: string;
+  price: string;
+  features: string[];
+  isCurrent: boolean;
+  bestFor?: string;
+};
+export type User = AppUser;
+export type SaaSProduct = DB['public']['Tables']['saas_products']['Row'];
+export type Contract = DB['public']['Tables']['contracts']['Row'];
+
+
+export interface DocumentItem {
   title: string;
-  description: string;
-  posted_by: AppUser['id'];
-  created_at: string;
-  updated_at: string;
+  file_url: string;
+  file_type: 'pdf' | 'doc' | 'docx' | 'txt';
+  uploaded_at: string | Date;
 }
 
-// Type for a Portfolio Item, used in the admin page
 export interface PortfolioItem {
   id: string;
   title: string;
   description: string;
-  imageUrl: string;
+  image_url: string;
   tags: string[];
   objectFit?: 'contain' | 'cover';
-  authorId: string;
+  author_id: string;
   author: string;
-  authorAvatar: string;
-  authorHeadline: string;
-  mediaType: 'image' | 'video' | 'app';
+  author_avatar: string;
+  author_headline: string;
+  media_type: 'image' | 'video' | 'app';
   images?: string[];
-  videoUrl?: string;
-  appUrl?: string;
+  video_url?: string;
+  app_url?: string;
   media_url?: string;
   project_url?: string;
   user_id?: AppUser['id'];
   created_at?: string | Date;
   updated_at?: string | Date;
-}
-
-// Type for a Document, used in the admin page
-export interface DocumentItem {
-  title: string;
-  fileUrl: string;
-  fileType: 'pdf' | 'doc' | 'docx' | 'txt';
-  uploadedAt: string | Date;
-}
-
-// Type for an Experience entry
-export type Experience = DB['public']['Tables']['experiences']['Row'];
-
-// Type for a Certification
-export type Certification = DB['public']['Tables']['certifications']['Row'];
-
-// Type for a Freelancer Profile
-export type FreelancerProfile = DB['public']['Tables']['freelancer_profiles']['Row'];
-
-// Type for a Business Profile
-export type BusinessProfile = DB['public']['Tables']['business_profiles']['Row'];
-
-// Type for a Course
-export type Course = DB['public']['Tables']['courses']['Row'];
-
-// Type for an Instructor Application
-export type InstructorApplication = DB['public']['Tables']['instructor_applications']['Row'];
-
-export type Project = {
-  id: string;
-  projectName: string;
-  creatorId: string;
-  createdAt: string;
-  role: 'creator' | 'member';
-};
-
-export type ProjectMember = {
-    user_id: string;
-    project_id: string;
-    role: string;
-    name: string;
-    avatar: string;
-}
-
-export type Invitation = {
-    id: string;
-    projectId: string;
-    inviterId: string;
-    inviteeId: string;
-    status: 'PENDING' | 'ACCEPTED' | 'DECLINED';
-};
-
-export type ProjectMessage = {
-    id: string;
-    project_id: string;
-    sender_id: string;
-    sender_name: string;
-    sender_avatar: string;
-    content: string;
-    created_at: string;
-    image_url?: string;
-    file_url?: string;
-    file_name?: string;
-};
-
-export interface Post {
-  id: string;
-  userId: string;
-  author: {
-    id: string;
-    name: string;
-    handle: string;
-    avatar: string;
-    isAdmin?: boolean;
-    isSentrybaseVerified?: boolean;
-    hasActiveSubscription?: boolean;
-  };
-  content: string;
-  image?: string;
-  audioUrl?: string;
-  fileUrl?: string;
-  fileName?: string;
-  type: 'default' | 'job_opportunity' | 'repost';
-  created_at: string | Date;
-  voteCount: number;
-  replyCount: number;
-  repostCount: number;
-  originalPost?: {
-    id: string;
-    authorName: string;
-    authorHandle: string;
-    authorAvatar: string;
-    content: string;
-  };
-  jobDetails?: {
-    title: string;
-    budget: string;
-    keywords: string[];
-  };
-  objectFit?: 'contain' | 'cover';
-  isReply?: boolean;
-}
-
-export interface Vote {
-    id: string;
-    post_id: string;
-    user_id: string;
-    direction: 'up' | 'down';
-}
-
-export interface Bookmark {
-    id: string;
-    type: 'user' | 'post' | 'job';
-    refId: string;
-    savedAt: Date;
-    content: {
-        title: string;
-        description: string;
-        image: string;
-    }
-}
-
-export interface Notification {
-    id: string;
-    type: string;
-    title: string;
-    description: string;
-    createdAt: string | Date;
-    isRead: boolean;
-    link?: string;
 }
 
 
@@ -211,60 +111,4 @@ export type AIWorkmateRadarOutput = {
     }[];
     isFallback?: boolean;
   }[];
-};
-
-export type CourseEnrollment = {
-    id: string;
-    courseId: string;
-    userId: string;
-    enrolledAt: string;
-    progress: number;
-};
-
-export type Plan = {
-  id: string;
-  name: string;
-  price: string;
-  features: string[];
-  isCurrent: boolean;
-  bestFor?: string;
-};
-
-export type User = AppUser;
-
-// Type for a SaaS Product
-export interface SaaSProduct {
-  id: string;
-  name: string;
-  description: string;
-  authorId: string;
-  authorName: string;
-  price: string;
-  tags: string[];
-  websiteUrl: string;
-  created_at?: string | Date;
-}
-
-// Type for a Contract
-export interface Contract {
-  id: string;
-  title: string;
-  owner_id: string;
-  status: 'draft' | 'review' | 'signed' | 'archived';
-  created_at: string | Date;
-  updated_at: string | Date;
-}
-
-// Type for an ad campaign in Supabase
-export type AdCampaign = {
-    id: string;
-    user_id: string;
-    name: string;
-    status: 'active' | 'paused' | 'archived';
-    ad_type: 'profile' | 'product' | 'content' | 'job';
-    content: string;
-    targeting_keywords: string[];
-    spend: number;
-    conversions: number;
-    created_at: string;
 };

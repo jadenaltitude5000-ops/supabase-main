@@ -112,7 +112,7 @@ function ChatPanel({ project, onToggleNotepad }: { project: Project | null; onTo
         const fetchProjectData = async () => {
             const { data: membersData } = await supabase.from('project_members').select('*, user:users(*)').eq('project_id', project.id);
             if (membersData) {
-              setProjectMembers(membersData.map((m: any) => ({ ...m, name: m.user.name, avatar: m.user.avatar, userId: m.user_id })));
+              setProjectMembers(membersData.map((m: any) => ({ ...m, name: m.user.name, avatar: m.user.avatar, user_id: m.user_id })));
             }
 
             const { data: messagesData } = await supabase.from('project_messages').select('*').eq('project_id', project.id).order('created_at', { ascending: true });
@@ -158,7 +158,7 @@ function ChatPanel({ project, onToggleNotepad }: { project: Project | null; onTo
 
         const { data: userProfile } = await supabase.from('users').select('name, avatar').eq('id', authUser.id).single();
 
-        const messageData: Partial<ProjectMessage> = {
+        const messageData: Omit<ProjectMessage, 'id' | 'created_at'> = {
             project_id: project.id,
             sender_id: authUser.id,
             sender_name: userProfile?.name || 'User',
@@ -192,7 +192,7 @@ function ChatPanel({ project, onToggleNotepad }: { project: Project | null; onTo
         <Card className="flex-1 flex flex-col shadow-none rounded-lg h-full overflow-hidden">
             <CardHeader className="flex flex-col p-2 space-y-2">
                 <div className="flex items-center justify-between">
-                    <CardTitle className="font-headline font-normal tracking-tight text-xl">{project?.projectName || "Boardroom"}</CardTitle>
+                    <CardTitle className="font-headline font-normal tracking-tight text-xl">{project?.project_name || "Boardroom"}</CardTitle>
                     <div className="flex items-center gap-2">
                          {project && (
                             <InviteColleaguesDialog 
@@ -211,7 +211,7 @@ function ChatPanel({ project, onToggleNotepad }: { project: Project | null; onTo
                     <div className="flex items-center space-x-1 p-1 rounded-md">
                         {(projectMembers || []).map(member => (
                             <Avatar key={member.user_id} className="h-8 w-8">
-                                <AvatarImage src={member.avatar} />
+                                <AvatarImage src={member.avatar || undefined} />
                                 <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
                             </Avatar>
                         ))}
@@ -224,7 +224,7 @@ function ChatPanel({ project, onToggleNotepad }: { project: Project | null; onTo
                         {messages?.map(msg => (
                             <div key={msg.id} className="flex items-start gap-3 mb-4">
                                 <Avatar className="h-8 w-8">
-                                    <AvatarImage src={msg.sender_avatar} />
+                                    <AvatarImage src={msg.sender_avatar || undefined} />
                                     <AvatarFallback>{msg.sender_name.charAt(0)}</AvatarFallback>
                                 </Avatar>
                                 <div>
@@ -346,7 +346,7 @@ function BoardroomsPageInternal() {
           setIsLoadingProjects(true);
           const { data } = await supabase.from('user_projects').select('*, project:projects(*)').eq('user_id', authUser.id).order('created_at', { ascending: false });
           if(data) {
-              const userProjects = data.map((up: any) => ({ ...up.project, id: up.project_id, role: up.role, projectName: up.project.project_name }));
+              const userProjects = data.map((up: any) => ({ ...up.project, id: up.project_id, role: up.role, project_name: up.project.project_name }));
               setProjects(userProjects);
           }
           setIsLoadingProjects(false);
@@ -425,7 +425,7 @@ function BoardroomsPageInternal() {
     } else {
         toast({ title: "Boardroom Renamed", description: `Successfully renamed to "${newName}".` });
         if (activeProject?.id === projectId) {
-            setActiveProject(prev => prev ? { ...prev, projectName: newName } : null);
+            setActiveProject(prev => prev ? { ...prev, project_name: newName } : null);
         }
     }
   };
@@ -496,8 +496,8 @@ function BoardroomsPageInternal() {
                                           onClick={() => setActiveProject(project)}
                                       >
                                           <CardHeader className="p-3 flex-row items-center justify-between">
-                                              <p className="font-semibold">{project.projectName}</p>
-                                              {project.creatorId === authUser?.id && (
+                                              <p className="font-semibold">{project.project_name}</p>
+                                              {project.creator_id === authUser?.id && (
                                                   <Button size="icon" variant="ghost" className="h-6 w-6" onClick={(e) => { e.stopPropagation(); handleDeleteProject(project.id)}}>
                                                       <Trash2 className="h-4 w-4 text-destructive" />
                                                   </Button>
@@ -525,7 +525,7 @@ function BoardroomsPageInternal() {
                          <Button variant="ghost" size="icon" onClick={() => setActiveProject(null)}>
                             <ChevronLeft />
                          </Button>
-                         <h2 className="font-semibold ml-2 truncate">{activeProject?.projectName}</h2>
+                         <h2 className="font-semibold ml-2 truncate">{activeProject?.project_name}</h2>
                       </header>
                       <ChatPanel project={activeProject} onToggleNotepad={() => setIsNotepadOpen(!isNotepadOpen)} />
                   </div>
@@ -558,7 +558,7 @@ function BoardroomsPageInternal() {
                     colleagues.map(colleague => (
                     <div key={colleague.id} className="flex items-center gap-3 p-2 rounded-md hover:bg-muted">
                         <Avatar className="h-10 w-10">
-                        <AvatarImage src={colleague.avatar} />
+                        <AvatarImage src={colleague.avatar || undefined} />
                         <AvatarFallback>{colleague.name.charAt(0)}</AvatarFallback>
                         </Avatar>
                         <div>
@@ -617,8 +617,8 @@ function BoardroomsPageInternal() {
                             onClick={() => setActiveProject(project)}
                         >
                             <CardHeader className="p-3 flex-row items-center justify-between">
-                                <p className="font-semibold">{project.projectName}</p>
-                                {project.creatorId === authUser?.id && (
+                                <p className="font-semibold">{project.project_name}</p>
+                                {project.creator_id === authUser?.id && (
                                     <div className="flex items-center">
                                         <Dialog>
                                             <DialogTrigger asChild>
@@ -627,7 +627,7 @@ function BoardroomsPageInternal() {
                                                 </Button>
                                             </DialogTrigger>
                                             <RenameProjectDialog 
-                                                currentName={project.projectName} 
+                                                currentName={project.project_name} 
                                                 onRename={(newName) => handleRenameProject(project.id, newName)} 
                                             />
                                         </Dialog>
@@ -736,7 +736,7 @@ function InviteColleaguesDialog({ colleagues, project, existingMembers, existing
 
     const availableColleagues = colleagues.filter(c => 
         !existingMembers.some(m => m.user_id === c.id) && 
-        !existingInvites.some(i => i.inviteeId === c.id && i.status === 'PENDING')
+        !existingInvites.some(i => i.invitee_id === c.id && i.status === 'PENDING')
     );
 
     return (
@@ -746,7 +746,7 @@ function InviteColleaguesDialog({ colleagues, project, existingMembers, existing
             </DialogTrigger>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Invite Colleagues to {project?.projectName}</DialogTitle>
+                    <DialogTitle>Invite Colleagues to {project?.project_name}</DialogTitle>
                 </DialogHeader>
                 <div className="py-4 space-y-4">
                     <h4 className="font-medium">Select colleagues to invite:</h4>
@@ -755,7 +755,7 @@ function InviteColleaguesDialog({ colleagues, project, existingMembers, existing
                             <div key={colleague.id} className="flex items-center justify-between p-2 rounded-md hover:bg-muted">
                                 <div className="flex items-center gap-3">
                                     <Avatar className="h-10 w-10">
-                                        <AvatarImage src={colleague.avatar} />
+                                        <AvatarImage src={colleague.avatar || undefined} />
                                         <AvatarFallback>{colleague.name.charAt(0)}</AvatarFallback>
                                     </Avatar>
                                     <div>

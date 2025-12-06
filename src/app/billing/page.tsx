@@ -179,12 +179,12 @@ function ContactSalesDialog() {
     }
 
     const { error } = await supabase.from('sales_inquiries').insert({
-      userId: authUser.id,
-      userName: authUser.user_metadata.full_name,
-      userEmail: authUser.email,
-      businessName,
-      businessEmail,
-      phoneNumber,
+      user_id: authUser.id,
+      user_name: authUser.user_metadata.full_name,
+      user_email: authUser.email as string,
+      business_name: businessName,
+      business_email: businessEmail,
+      phone_number: phoneNumber,
       message,
     });
     
@@ -445,7 +445,7 @@ function BillingPageInternal() {
       return <DashboardSkeleton />
   }
 
-  const currentPlanId = user?.subscription?.planId;
+  const currentPlanId = user?.subscription ? (user.subscription as { planId: string }).planId : null;
   const isUserLoggedIn = !!authUser;
 
   const handleUpgrade = async (plan: Plan) => {
@@ -458,7 +458,7 @@ function BillingPageInternal() {
     if (error) {
         toast({ variant: 'destructive', title: "Upgrade Failed", description: error.message });
     } else {
-        setUser(prev => prev ? ({...prev, subscription: { planId: plan.id }}) : null);
+        setUser(prev => prev ? ({...prev, subscription: { planId: plan.id } as any}) : null);
         toast({ title: "Upgrade Successful!", description: `You are now on the ${plan.name} plan.` });
     }
   };
@@ -468,12 +468,12 @@ function BillingPageInternal() {
       toast({ variant: "destructive", title: "Error", description: "You must be logged in to purchase verification." });
       return;
     }
-     const { error } = await supabase.from('users').update({ isSentrybaseVerified: true }).eq('id', authUser.id);
+     const { error } = await supabase.from('users').update({ is_sentrybase_verified: true }).eq('id', authUser.id);
 
      if(error) {
         toast({ variant: 'destructive', title: 'Purchase Failed', description: error.message });
      } else {
-        setUser(prev => prev ? ({...prev, isSentrybaseVerified: true}) : null);
+        setUser(prev => prev ? ({...prev, is_sentrybase_verified: true}) : null);
         toast({ title: "Verification Successful!", description: "You are now a Sentrybase Verified member." });
      }
   };
@@ -554,7 +554,7 @@ function BillingPageInternal() {
                                 <li className="flex items-start gap-2 text-sm text-muted-foreground"><Feather className="h-4 w-4 mt-1 flex-shrink-0 text-primary/50" /><span>Directly support Sentrybase development</span></li>
                             </CardContent>
                             <CardFooter>
-                                {user?.isSentrybaseVerified ? (
+                                {user?.is_sentrybase_verified ? (
                                     <Button className="w-full" disabled variant="outline">Already Verified</Button>
                                 ) : (
                                     <Dialog>
@@ -602,7 +602,7 @@ function BillingPageInternal() {
                                 <li className="flex items-start gap-2 text-sm text-muted-foreground"><Feather className="h-4 w-4 mt-1 flex-shrink-0 text-primary/50" /><span>In-depth competitive analysis</span></li>
                                 <li className="flex items-start gap-2 text-sm text-muted-foreground"><Feather className="h-4 w-4 mt-1 flex-shrink-0 text-primary/50" /><span>Market trend forecasting</span></li>
                                 <li className="flex items-start gap-2 text-sm text-muted-foreground"><Feather className="h-4 w-4 mt-1 flex-shrink-0 text-primary/50" /><span>Target audience deep-dive</span></li>
-                                <li className="flex items-start gap-2 text-sm text-muted-foreground"><Feather className="h-4 w-4 mt-1 flex-shrink-0 text-primary/50" /><span>Actionable growth strategies</span></li>
+                                <li className="flex items-start gap-2 text-sm text-muted-foreground"><Feather className="h-4 w-4 mt-1-flex-shrink-0 text-primary/50" /><span>Actionable growth strategies</span></li>
                             </CardContent>
                             <CardFooter>
                                 <Button asChild className="w-full" disabled={!isUserLoggedIn}>

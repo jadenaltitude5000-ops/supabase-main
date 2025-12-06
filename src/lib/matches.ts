@@ -121,8 +121,8 @@ export async function skillSyncNet(input: SkillSyncNetInput): Promise<SkillSyncN
       match: {
         freelancer: {
           name: freelancer.name,
-          headline: freelancer.headline,
-          skills: freelancer.skills,
+          headline: freelancer.headline || '',
+          skills: freelancer.skills || [],
           matchReasoning: reasoning,
           matchConfidence: Math.min(99, Math.round(score * 100)), // Cap confidence at 99%
         },

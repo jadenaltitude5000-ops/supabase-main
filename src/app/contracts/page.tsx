@@ -227,7 +227,7 @@ function ContractsPageInternal() {
         }
 
         const contractsWithPartyCount: ContractWithPartyCount[] = await Promise.all(
-          (contractsData || []).map(async (contract: Contract) => {
+          (contractsData || []).map(async (contract: any) => {
             const { count, error } = await supabase
               .from('contract_parties')
               .select('*', { count: 'exact', head: true })

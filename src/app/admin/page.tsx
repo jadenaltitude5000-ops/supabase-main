@@ -267,7 +267,7 @@ function PortfolioItemDialog({ item }: { item: PortfolioItem }) {
       <div className="grid grid-cols-1 md:grid-cols-[2fr,1fr]">
         <div className="relative aspect-video bg-muted group">
           <Image
-            src={item.imageUrl}
+            src={item.image_url}
             alt={item.title}
             fill
             className={cn("object-contain", {
@@ -316,7 +316,7 @@ function PortfolioCard({ item, layout }: { item: PortfolioItem; layout: Portfoli
         <DialogTrigger asChild>
           <Card className="flex items-center gap-4 p-4 transition-shadow hover:shadow-md cursor-pointer">
             <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-md bg-muted">
-              <Image src={item.imageUrl} alt={item.title} fill className={cn("object-contain", { "object-cover": item.objectFit === 'cover' })} />
+              <Image src={item.image_url} alt={item.title} fill className={cn("object-contain", { "object-cover": item.objectFit === 'cover' })} />
             </div>
             <div className="flex-1">
               <h3 className="font-semibold">{item.title}</h3>
@@ -337,7 +337,7 @@ function PortfolioCard({ item, layout }: { item: PortfolioItem; layout: Portfoli
       <DialogTrigger asChild>
         <div className="group relative mb-4 break-inside-avoid overflow-hidden rounded-lg">
           <Image
-            src={item.imageUrl}
+            src={item.image_url}
             alt={item.title}
             width={500}
             height={375} // Using a consistent aspect ratio (4:3) instead of random height
@@ -364,7 +364,7 @@ function PortfolioCard({ item, layout }: { item: PortfolioItem; layout: Portfoli
   );
 }
 
-function AddPortfolioItemDialog({ onSave }: { onSave: (item: Omit<PortfolioItem, 'id' | 'authorId' | 'author' | 'authorAvatar' | 'authorHeadline' | 'mediaType'>) => void }) {
+function AddPortfolioItemDialog({ onSave }: { onSave: (item: Omit<PortfolioItem, 'id' | 'author_id' | 'author' | 'author_avatar' | 'author_headline' | 'media_type'>) => void }) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [tags, setTags] = useState('');
@@ -379,7 +379,7 @@ function AddPortfolioItemDialog({ onSave }: { onSave: (item: Omit<PortfolioItem,
     const newItem = {
       title,
       description,
-      imageUrl,
+      image_url: imageUrl,
       tags: tags.split(',').map(tag => tag.trim()),
       objectFit,
     };
@@ -748,7 +748,7 @@ function AdminPageInternal() {
             .from('users')
             .select('*, freelancer_profiles(*), business_profiles(*)')
             .eq('id', authUser.id)
-            .single();
+            .single<AppUser>();
 
         if (error) {
             console.error("Error fetching user profile", error);
@@ -757,11 +757,10 @@ function AdminPageInternal() {
         }
 
         if (data) {
-            const userData: AppUser = {
-                ...data,
-                freelancer_profiles: Array.isArray(data.freelancer_profiles) ? data.freelancer_profiles[0] : data.freelancer_profiles,
-                business_profiles: Array.isArray(data.business_profiles) ? data.business_profiles[0] : data.business_profiles,
-            };
+            const freelancerProfile = Array.isArray(data.freelancer_profiles) ? data.freelancer_profiles[0] : data.freelancer_profiles;
+            const businessProfile = Array.isArray(data.business_profiles) ? data.business_profiles[0] : data.business_profiles;
+
+            const userData: AppUser = { ...data, freelancer_profiles: freelancerProfile, business_profiles: businessProfile };
             setUser(userData);
         }
         setIsUserDocLoading(false);
@@ -1036,7 +1035,7 @@ function AdminPageInternal() {
   const handleAddPortfolioItem = async (itemData: Omit<PortfolioItem, 'id' | 'authorId' | 'author' | 'authorAvatar' | 'authorHeadline' | 'mediaType'>) => {
     if (!authUser || !supabase) return;
      const newPortfolio = [...(user?.portfolio as PortfolioItem[] || []), { id: crypto.randomUUID(), ...itemData }];
-    const { error } = await supabase.from('users').update({ portfolio: newPortfolio }).eq('id', authUser.id);
+    const { error } = await supabase.from('users').update({ portfolio: newPortfolio as any }).eq('id', authUser.id);
     if(error) toast({ variant: 'destructive', title: "Error", description: "Could not save portfolio item." });
     else {
       setPortfolioItems(newPortfolio as PortfolioItem[]);
@@ -1048,12 +1047,12 @@ function AdminPageInternal() {
     if (!authUser || !supabase) return;
      const newDocument: DocumentItem = {
         title: name,
-        fileUrl,
-        fileType: name.split('.').pop() as any || 'pdf',
-        uploadedAt: new Date(),
+        file_url: fileUrl,
+        file_type: name.split('.').pop() as any || 'pdf',
+        uploaded_at: new Date(),
      };
      const newDocuments = [...(user?.documents as DocumentItem[] || []), newDocument];
-     const { error } = await supabase.from('users').update({ documents: newDocuments }).eq('id', authUser.id);
+     const { error } = await supabase.from('users').update({ documents: newDocuments as any }).eq('id', authUser.id);
      if(error) toast({ variant: 'destructive', title: "Error", description: "Could not save document." });
      else {
          setDocuments(newDocuments);
@@ -1063,8 +1062,8 @@ function AdminPageInternal() {
   
   const handleRemoveDocument = async (docToRemove: DocumentItem) => {
     if (!authUser || !supabase) return;
-    const newDocuments = (user?.documents as DocumentItem[] || []).filter(doc => doc.fileUrl !== docToRemove.fileUrl);
-    const { error } = await supabase.from('users').update({ documents: newDocuments }).eq('id', authUser.id);
+    const newDocuments = (user?.documents as DocumentItem[] || []).filter(doc => doc.file_url !== docToRemove.file_url);
+    const { error } = await supabase.from('users').update({ documents: newDocuments as any }).eq('id', authUser.id);
     if(error) toast({ variant: 'destructive', title: "Error", description: "Could not remove document." });
     else {
         setDocuments(newDocuments);
@@ -1075,7 +1074,7 @@ function AdminPageInternal() {
   const handleAddExperience = async (newItem: Experience) => {
     if (!authUser || !supabase) return;
     const newExperiences = [...(user?.experiences as Experience[] || []), newItem];
-    const { error } = await supabase.from('users').update({ experiences: newExperiences }).eq('id', authUser.id);
+    const { error } = await supabase.from('users').update({ experiences: newExperiences as any }).eq('id', authUser.id);
     if(error) toast({ variant: 'destructive', title: "Error", description: "Could not save experience." });
     else {
         setExperiences(newExperiences);
@@ -1086,7 +1085,7 @@ function AdminPageInternal() {
   const handleAddCertification = async (newItem: Certification) => {
     if (!authUser || !supabase) return;
     const newCertifications = [...(user?.certifications as Certification[] || []), newItem];
-    const { error } = await supabase.from('users').update({ certifications: newCertifications }).eq('id', authUser.id);
+    const { error } = await supabase.from('users').update({ certifications: newCertifications as any }).eq('id', authUser.id);
     if(error) toast({ variant: 'destructive', title: "Error", description: "Could not save certification." });
     else {
         setCertifications(newCertifications);
@@ -1096,12 +1095,12 @@ function AdminPageInternal() {
 
   const handleCreateCourse = async (newCourseData: Partial<Course>) => {
     if (!authUser || !user || !supabase) return;
-    const completeCourseData: Omit<Course, 'id' | 'created_at' | 'instructor_name' | 'instructor_avatar'> = {
+    const completeCourseData: Omit<Course, 'id' | 'created_at' | 'rating' | 'student_count'> = {
         ...newCourseData,
         instructor_id: authUser.id,
-        rating: 0,
-        student_count: 0,
-    } as Omit<Course, 'id' | 'created_at' | 'instructor_name' | 'instructor_avatar'>;
+        instructor_name: user.name,
+        instructor_avatar: user.avatar,
+    } as Omit<Course, 'id' | 'created_at' | 'rating' | 'student_count'>;
 
     const { data: inserted, error } = await supabase.from('courses').insert(completeCourseData).select();
     if(error) {
@@ -1317,7 +1316,7 @@ function AdminPageInternal() {
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="bio">{t.bio}</Label>
-                    <Textarea id="bio" className="w-full min-h-24 p-2 border rounded-md" value={bio} onChange={e => setBio(e.target.value)} />
+                    <Textarea id="bio" className="w-full min-h-24 p-2 border rounded-md" value={bio || ''} onChange={e => setBio(e.target.value)} />
                 </div>
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div className="space-y-2">
@@ -1421,7 +1420,7 @@ function AdminPageInternal() {
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="company-size">Company Size</Label>
-                                    <Select value={companySize} onValueChange={(v) => setCompanySize(v as any)}>
+                                    <Select value={companySize || undefined} onValueChange={(v) => setCompanySize(v as any)}>
                                         <SelectTrigger id="company-size">
                                             <SelectValue placeholder="Select company size" />
                                         </SelectTrigger>
@@ -1487,7 +1486,7 @@ function AdminPageInternal() {
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="availability">Availability</Label>
-                                    <Select value={availability} onValueChange={(v) => setAvailability(v as any)}>
+                                    <Select value={availability || undefined} onValueChange={(v) => setAvailability(v as any)}>
                                         <SelectTrigger id="availability">
                                             <SelectValue placeholder="Select your availability" />
                                         </SelectTrigger>

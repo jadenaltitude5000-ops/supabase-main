@@ -45,10 +45,10 @@ function calculateRecency(postTimestamp: Date): number {
 }
 
 function getPostType(post: Post): keyof typeof INTERACTION_WEIGHTS {
-    if (post.jobDetails) {
+    if (post.job_details) {
         return 'job_opportunity';
     }
-    if (post.originalPost) {
+    if (post.original_post) {
         return 'repost';
     }
     return 'default';
@@ -76,7 +76,7 @@ export async function generatePersonalizedFeed(
     const postType = getPostType(post);
     const interactionWeight = INTERACTION_WEIGHTS[postType];
 
-    const postDate = (post.createdAt as any)?.toDate ? (post.createdAt as any).toDate() : new Date();
+    const postDate = (post.created_at as any)?.toDate ? (post.created_at as any).toDate() : new Date();
     const recencyScore = calculateRecency(postDate);
 
     const relevanceScore = calculateRelevance(userVector, postVector);
