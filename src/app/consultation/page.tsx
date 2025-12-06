@@ -59,6 +59,15 @@ function ConsultationPageInternal() {
       });
       return;
     }
+    
+    if (!authUser.email) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Your user email could not be found.',
+      });
+      return;
+    }
 
     setIsSubmitting(true);
 
@@ -66,7 +75,7 @@ function ConsultationPageInternal() {
         const { error } = await supabase.from('sales_inquiries').insert({
             user_id: authUser.id,
             user_name: authUser.user_metadata.full_name,
-            user_email: authUser.email as string,
+            user_email: authUser.email,
             business_name: businessName,
             business_email: businessEmail,
             phone_number: phoneNumber,
