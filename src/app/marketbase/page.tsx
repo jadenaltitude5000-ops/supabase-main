@@ -325,6 +325,8 @@ function AddPortfolioItemDialog() {
     const [description, setDescription] = useState('');
     const [tags, setTags] = useState('');
     const [imageUrl, setImageUrl] = useState<string | null>(null);
+    const [objectFit, setObjectFit] = useState<'contain' | 'cover'>('contain');
+
 
     const handleUpload = async () => {
         if (!title || !description || !tags || !imageUrl || !authUser || !supabase) {
@@ -350,7 +352,11 @@ function AddPortfolioItemDialog() {
             media_type: 'image',
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
-            objectFit: 'contain'
+            object_fit: objectFit,
+            app_url: null,
+            video_url: null,
+            images: null,
+            user_id: null,
         };
 
         const { error: insertError } = await supabase.from('portfolio').insert(newItem as any);
@@ -538,7 +544,7 @@ function SaasTab() {
         const fetchItems = async () => {
             setIsLoading(true);
             const { data, error } = await supabase.from('saas_products').select('*').order('created_at', { ascending: false });
-            if(data) setSassProducts(data);
+            if(data) setSassProducts(data as SaaSProduct[]);
             setIsLoading(false);
         }
         fetchItems();
@@ -800,5 +806,3 @@ function MarketbasePage() {
 }
 
 export default MarketbasePage;
-
-    
