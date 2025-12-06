@@ -261,6 +261,7 @@ function AdvancedProfileDialog({ onSave, initialTraits }: { onSave: (traits: str
 
 function PortfolioItemDialog({ item }: { item: PortfolioItem }) {
   const { toggleFullscreen } = useFullscreen();
+  const objectFit = item.object_fit || 'contain';
 
   return (
     <DialogContent className="max-w-5xl p-0">
@@ -271,7 +272,7 @@ function PortfolioItemDialog({ item }: { item: PortfolioItem }) {
             alt={item.title}
             fill
             className={cn("object-contain", {
-              "object-cover": item.object_fit === 'cover'
+              "object-cover": objectFit === 'cover'
             })}
             onContextMenu={(e) => e.preventDefault()}
           />
@@ -365,7 +366,7 @@ function PortfolioCard({ item, layout }: { item: PortfolioItem; layout: Portfoli
   );
 }
 
-function AddPortfolioItemDialog({ onSave }: { onSave: (item: Omit<PortfolioItem, 'id' | 'author_id' | 'author' | 'author_avatar' | 'author_headline' | 'media_type' | 'created_at' | 'updated_at' | 'app_url' | 'video_url' | 'images' | 'user_id'>) => void }) {
+function AddPortfolioItemDialog({ onSave }: { onSave: (item: Omit<PortfolioItem, 'id' | 'created_at' | 'updated_at' | 'author_id' | 'author_name' | 'author_avatar' | 'author_headline' | 'user_id' | 'media_type' | 'images' | 'app_url' | 'video_url'>) => void }) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [tags, setTags] = useState('');
@@ -377,7 +378,7 @@ function AddPortfolioItemDialog({ onSave }: { onSave: (item: Omit<PortfolioItem,
   const handleSave = async () => {
     if (!title || !description || !tags || !imageUrl) return;
     setIsSaving(true);
-    const newItem: Omit<PortfolioItem, 'id' | 'author_id' | 'author' | 'author_avatar' | 'author_headline' | 'media_type' | 'created_at' | 'updated_at' | 'app_url' | 'video_url' | 'images' | 'user_id'> = {
+    const newItem = {
       title,
       description,
       image_url: imageUrl,
@@ -1033,9 +1034,24 @@ function AdminPageInternal() {
   };
 
   
-  const handleAddPortfolioItem = async (itemData: Omit<PortfolioItem, 'id' | 'author_id' | 'author' | 'author_avatar' | 'author_headline' | 'media_type' | 'created_at' | 'updated_at' | 'app_url' | 'video_url' | 'images' | 'user_id'>) => {
-    if (!authUser || !supabase) return;
-     const newPortfolio = [...(user?.portfolio as unknown as PortfolioItem[] || []), { id: crypto.randomUUID(), ...itemData }];
+  const handleAddPortfolioItem = async (itemData: Omit<PortfolioItem, 'id' | 'created_at' | 'updated_at' | 'author_id' | 'author_name' | 'author_avatar' | 'author_headline' | 'user_id' | 'media_type' | 'images' | 'app_url' | 'video_url'>) => {
+    if (!authUser || !supabase || !user) return;
+     const newPortfolioItem: PortfolioItem = {
+        id: crypto.randomUUID(),
+        ...itemData,
+        user_id: authUser.id,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        author_id: user.id,
+        author_name: user.name,
+        author_avatar: user.avatar || '',
+        author_headline: user.headline || '',
+        media_type: 'image', // Assuming only image for now
+        images: [itemData.image_url],
+        app_url: null,
+        video_url: null,
+     };
+     const newPortfolio = [...(user?.portfolio as unknown as PortfolioItem[] || []), newPortfolioItem];
     const { error } = await supabase.from('users').update({ portfolio: newPortfolio as any }).eq('id', authUser.id);
     if(error) toast({ variant: 'destructive', title: "Error", description: "Could not save portfolio item." });
     else {
@@ -1050,7 +1066,7 @@ function AdminPageInternal() {
         title: name,
         file_url: fileUrl,
         file_type: name.split('.').pop() as any || 'pdf',
-        uploaded_at: new Date(),
+        uploaded_at: new Date().toISOString(),
      };
      const newDocuments = [...(user?.documents as unknown as DocumentItem[] || []), newDocument];
      const { error } = await supabase.from('users').update({ documents: newDocuments as any }).eq('id', authUser.id);
@@ -1326,7 +1342,7 @@ function AdminPageInternal() {
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="location">Location</Label>
-                        <Select value={country} onValueChange={setCountry}>
+                        <Select value={country ?? undefined} onValueChange={setCountry}>
                             <SelectTrigger id="location">
                                 <SelectValue placeholder="Select your country" />
                             </SelectTrigger>
@@ -1421,7 +1437,7 @@ function AdminPageInternal() {
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="company-size">Company Size</Label>
-                                    <Select value={companySize || undefined} onValueChange={(v) => setCompanySize(v as any)}>
+                                    <Select value={companySize ?? undefined} onValueChange={(v) => setCompanySize(v as any)}>
                                         <SelectTrigger id="company-size">
                                             <SelectValue placeholder="Select company size" />
                                         </SelectTrigger>
@@ -1487,7 +1503,7 @@ function AdminPageInternal() {
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="availability">Availability</Label>
-                                    <Select value={availability || undefined} onValueChange={(v) => setAvailability(v as any)}>
+                                    <Select value={availability ?? undefined} onValueChange={(v) => setAvailability(v as any)}>
                                         <SelectTrigger id="availability">
                                             <SelectValue placeholder="Select your availability" />
                                         </SelectTrigger>
@@ -1853,3 +1869,4 @@ export default function AdminPage() {
         </ClientOnly>
     );
 }
+
