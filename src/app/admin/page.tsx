@@ -366,7 +366,7 @@ function PortfolioCard({ item, layout }: { item: PortfolioItem; layout: Portfoli
   );
 }
 
-function AddPortfolioItemDialog({ onSave }: { onSave: (item: Omit<PortfolioItem, 'id' | 'created_at' | 'updated_at' | 'author_id' | 'author' | 'author_avatar' | 'author_headline' | 'user_id' | 'media_type' | 'images' | 'app_url' | 'video_url'>) => void }) {
+function AddPortfolioItemDialog({ onSave }: { onSave: (item: Omit<PortfolioItem, 'id' | 'created_at' | 'updated_at' | 'author_id' | 'author' | 'author_avatar' | 'author_headline' | 'user_id' | 'media_type' | 'images' | 'app_url' | 'video_url'> & { object_fit?: 'contain' | 'cover' }) => void }) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [tags, setTags] = useState('');
@@ -1034,7 +1034,7 @@ function AdminPageInternal() {
   };
 
   
-  const handleAddPortfolioItem = async (itemData: Omit<PortfolioItem, 'id' | 'created_at' | 'updated_at' | 'author_id' | 'author' | 'author_avatar' | 'author_headline' | 'user_id' | 'media_type' | 'images' | 'app_url' | 'video_url'>) => {
+  const handleAddPortfolioItem = async (itemData: Omit<PortfolioItem, 'id' | 'created_at' | 'updated_at' | 'author_id' | 'author' | 'author_avatar' | 'author_headline' | 'user_id' | 'media_type' | 'images' | 'app_url' | 'video_url'> & { object_fit?: 'contain' | 'cover' }) => {
     if (!authUser || !supabase || !user) return;
      const newPortfolioItem: PortfolioItem = {
         id: crypto.randomUUID(),
