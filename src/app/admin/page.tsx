@@ -1869,4 +1869,3 @@ export default function AdminPage() {
         </ClientOnly>
     );
 }
-
