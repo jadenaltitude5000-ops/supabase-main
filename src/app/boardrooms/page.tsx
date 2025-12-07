@@ -130,7 +130,7 @@ function ChatPanel({ project, onToggleNotepad }: { project: Project | null; onTo
 
 
     const [newMessage, setNewMessage] = useState('');
-    const [imageUrl, setImageUrl] = useState<string | undefined>(undefined);
+    const [imageUrl, setImageUrl] = useState<string | null>(null);
     const [fileUrl, setFileUrl] = useState<string | undefined>(undefined);
     const [fileName, setFileName] = useState<string | undefined>(undefined);
     const [isSending, setIsSending] = useState(false);
@@ -172,7 +172,7 @@ function ChatPanel({ project, onToggleNotepad }: { project: Project | null; onTo
         try {
           await supabase.from('project_messages').insert(messageData);
           setNewMessage('');
-          setImageUrl(undefined);
+          setImageUrl(null);
           setFileUrl(undefined);
           setFileName(undefined);
         } catch (error: any) {
@@ -284,7 +284,7 @@ function ChatPanel({ project, onToggleNotepad }: { project: Project | null; onTo
                             <div className="absolute -bottom-24 left-0 w-48">
                                 <div className="relative aspect-video w-full overflow-hidden rounded-md">
                                     <Image src={imageUrl} alt="Message preview" fill className="object-cover" />
-                                    <Button variant="destructive" size="icon" className="absolute top-1 right-1 h-5 w-5" onClick={() => setImageUrl(undefined)}><X className="h-3 w-3"/></Button>
+                                    <Button variant="destructive" size="icon" className="absolute top-1 right-1 h-5 w-5" onClick={() => setImageUrl(null)}><X className="h-3 w-3"/></Button>
                                 </div>
                             </div>
                         )}

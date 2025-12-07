@@ -161,6 +161,16 @@ The bootstrap command will guide you through the process of setting up a Supabas
 
 Command & config reference can be found [here](https://supabase.com/docs/reference/cli/about).
 
+## Troubleshooting
+
+If you encounter a build error like `Cannot find module './XYZ.js'`, it often indicates a corrupted cache. To fix this, follow these steps:
+
+1.  **Clean the cache**: Run the command `npm run clean`. This will delete the `.next` directory.
+2.  **Reinstall dependencies**: Run the command `npm install`.
+3.  **Restart the development server**: Run `npm run dev`.
+
+This process will rebuild the application from a clean state and should resolve the issue.
+
 ## Breaking changes
 
 We follow semantic versioning for changes that directly impact CLI commands, flags, and configurations.
