@@ -71,9 +71,9 @@ export default function UserProfilePage() {
   return (
     <div className="container mx-auto p-4 md:p-8">
         <div className="max-w-4xl mx-auto">
-            <div className="h-48 bg-muted rounded-lg" style={{ backgroundImage: `url(${user.businessCardBackground})`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
+            <div className="h-48 bg-muted rounded-lg" style={{ backgroundImage: `url(${user.business_card_background})`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
             <div className="flex items-end -mt-16 ml-8">
-                <img src={user.avatar} alt={user.name} className="h-32 w-32 rounded-full border-4 border-background bg-background" />
+                <img src={user.avatar || undefined} alt={user.name} className="h-32 w-32 rounded-full border-4 border-background bg-background" />
             </div>
              <div className="mt-4">
                 <h1 className="text-3xl font-bold">{user.name}</h1>
