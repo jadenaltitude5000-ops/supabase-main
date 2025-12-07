@@ -109,25 +109,25 @@ export async function skillSyncNet(input: SkillSyncNetInput): Promise<SkillSyncN
       }
     });
 
-    if (!bestMatch) {
-      return { match: null };
-    }
-    
-    const { freelancer, score } = bestMatch;
-    
-    const reasoning = `This freelancer is a strong match due to a high skill overlap with your project requirements. Their experience level is well-aligned with your project's scope, and the proposed budget is fair for their expertise.`;
-    
-    return {
-      match: {
-        freelancer: {
-          name: freelancer.name,
-          headline: freelancer.headline ?? '',
-          skills: freelancer.skills ?? [],
-          matchReasoning: reasoning,
-          matchConfidence: Math.min(99, Math.round(score * 100)), // Cap confidence at 99%
+    if (bestMatch) {
+      const { freelancer, score } = bestMatch;
+      
+      const reasoning = `This freelancer is a strong match due to a high skill overlap with your project requirements. Their experience level is well-aligned with your project's scope, and the proposed budget is fair for their expertise.`;
+      
+      return {
+        match: {
+          freelancer: {
+            name: freelancer.name,
+            headline: freelancer.headline ?? '',
+            skills: freelancer.skills ?? [],
+            matchReasoning: reasoning,
+            matchConfidence: Math.min(99, Math.round(score * 100)), // Cap confidence at 99%
+          },
         },
-      },
-    };
+      };
+    }
+
+    return { match: null };
   }
 
   // Placeholder for freelancer_seeking_project context
