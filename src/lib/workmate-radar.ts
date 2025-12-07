@@ -7,7 +7,7 @@
 'use server';
 
 import { cosineSimilarity } from '@/lib/algorithms/text-analysis';
-import type { User, AIWorkmateRadarInput, AIWorkmateRadarOutput } from '@/lib/types';
+import type { AppUser, AIWorkmateRadarInput, AIWorkmateRadarOutput } from '@/lib/types';
 import { AIWorkmateRadarInputSchema } from '@/lib/types';
 
 
@@ -61,7 +61,7 @@ export async function aiWorkmateRadar(input: AIWorkmateRadarInput): Promise<AIWo
     }
 
     // --- Fallback Logic: "Who You Might Profit With" ---
-    const currentUserProfile = allUsersWithVectors.find(u => u.profile.id === currentUserId)?.profile;
+    const currentUserProfile = allUsersWithVectors.find(u => u.profile.id === currentUserId)?.profile as AppUser | undefined;
     if (!currentUserProfile) {
         return { suggestedMembers: [] };
     }
@@ -70,9 +70,10 @@ export async function aiWorkmateRadar(input: AIWorkmateRadarInput): Promise<AIWo
 
     const fallbackCandidates = candidates
         .map(candidate => {
-            const candidateAge = candidate.profile.experience_years ? (20 + candidate.profile.experience_years) : 30;
+            const typedProfile = candidate.profile as AppUser;
+            const candidateAge = typedProfile.experience_years ? (20 + typedProfile.experience_years) : 30;
             const ageDifference = Math.abs(currentUserAge - candidateAge);
-            const isSameCountry = candidate.profile.location === currentUserCountry;
+            const isSameCountry = typedProfile.location === currentUserCountry;
 
             let score = 0;
             if (isSameCountry) score += 40;
@@ -80,7 +81,7 @@ export async function aiWorkmateRadar(input: AIWorkmateRadarInput): Promise<AIWo
             else if (ageDifference <= 10) score += 15;
 
             // Small boost for having any skills in common
-            const commonSkills = (currentUserProfile.skills || []).filter(skill => (candidate.profile.skills || []).includes(skill));
+            const commonSkills = (currentUserProfile.skills || []).filter(skill => (typedProfile.skills || []).includes(skill));
             if (commonSkills.length > 0) {
                 score += commonSkills.length * 5;
             }

@@ -177,7 +177,7 @@ export function WorkmateRadarForm() {
 
         if(usersError) throw usersError;
 
-        if (allUsers.length === 0) {
+        if (!allUsers || allUsers.length === 0) {
             setError("No users found in the database to perform a match.");
             setLoading(false);
             return;
@@ -213,7 +213,7 @@ export function WorkmateRadarForm() {
 
         const input: AIWorkmateRadarInput = {
             currentUserVector: currentUserWithVector.vector,
-            allUsersWithVectors: allUsersWithVectors,
+            allUsersWithVectors: allUsersWithVectors as any,
             teamSize: data.teamSize,
             currentUserId: currentUser.id,
             country: data.country,
