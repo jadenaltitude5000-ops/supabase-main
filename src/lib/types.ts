@@ -31,7 +31,7 @@ export type Post = DB['public']['Tables']['posts']['Row'] & {
         is_sentrybase_verified?: boolean | null;
         hasActiveSubscription?: boolean;
     };
-    object_fit?: 'contain' | 'cover';
+    object_fit?: 'contain' | 'cover' | null;
     isReply?: boolean;
 };
 export type Vote = DB['public']['Tables']['votes']['Row'];
@@ -58,7 +58,7 @@ export interface DocumentItem {
   uploaded_at: string | Date;
 }
 
-export type PortfolioItem = DB['public']['Tables']['portfolio']['Row'] & { object_fit?: 'contain' | 'cover' | null };
+export type PortfolioItem = DB['public']['Tables']['portfolio']['Row'];
 
 
 // Interfaces for AIWorkmateRadar

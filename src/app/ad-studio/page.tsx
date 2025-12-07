@@ -144,7 +144,7 @@ function AdStudioPageInternal() {
             console.error("Error fetching campaigns:", error);
             setCampaigns([]);
         } else {
-            setCampaigns(data as Campaign[]);
+            setCampaigns(data as unknown as Campaign[]);
         }
         setIsLoading(false);
     };

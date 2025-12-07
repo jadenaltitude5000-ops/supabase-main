@@ -163,11 +163,12 @@ Command & config reference can be found [here](https://supabase.com/docs/referen
 
 ## Troubleshooting
 
-If you encounter a build error like `Cannot find module './XYZ.js'`, it often indicates a corrupted cache. To fix this, follow these steps:
+If you encounter a build error like `Cannot find module './XYZ.js'`, it often indicates a corrupted cache or inconsistencies in your codebase. To fix this, follow these steps:
 
-1.  **Clean the cache**: Run the command `npm run clean`. This will delete the `.next` directory.
-2.  **Reinstall dependencies**: Run the command `npm install`.
-3.  **Restart the development server**: Run `npm run dev`.
+1.  **Heal Project**: Run `npm run heal`. This will programmatically fix common type and casing errors.
+2.  **Clean Cache**: After healing, run `npm run clean` to delete the `.next` directory.
+3.  **Reinstall Dependencies**: Run `npm install` to ensure all packages are correctly installed.
+4.  **Restart Server**: Run `npm run dev` to restart the development server.
 
 This process will rebuild the application from a clean state and should resolve the issue.
 

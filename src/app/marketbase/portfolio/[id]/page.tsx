@@ -106,7 +106,7 @@ export default function PortfolioItemPage() {
         switch(item.media_type) {
             case 'video':
                 return (
-                    <video controls src={item.video_url || ''} className="w-full h-full object-contain rounded-lg">
+                    <video controls src={item.video_url ?? ''} className="w-full h-full object-contain rounded-lg">
                         Your browser does not support the video tag.
                     </video>
                 );
@@ -117,7 +117,7 @@ export default function PortfolioItemPage() {
                         <h3 className="text-xl font-semibold">Live Application</h3>
                         <p className="text-muted-foreground mt-2">This project links to an external application.</p>
                         <Button asChild className="mt-6">
-                            <a href={item.app_url || '#'} target="_blank" rel="noopener noreferrer">Visit App</a>
+                            <a href={item.app_url ?? '#'} target="_blank" rel="noopener noreferrer">Visit App</a>
                         </Button>
                     </div>
                 );
@@ -126,7 +126,7 @@ export default function PortfolioItemPage() {
                 return (
                     <Carousel className="w-full h-full relative group">
                         <CarouselContent className="h-full">
-                        {(item.images || [item.image_url]).map((img, index) => (
+                        {(item.images ?? [item.image_url]).map((img, index) => (
                             <CarouselItem key={index} className="h-full flex items-center justify-center">
                                 <Image src={img} alt={`${item.title} - Image ${index + 1}`} width={1200} height={800} className="max-h-full w-auto object-contain rounded-md" />
                             </CarouselItem>
@@ -162,7 +162,7 @@ export default function PortfolioItemPage() {
                         <h1 className="text-3xl font-headline font-normal tracking-tight">{item.title}</h1>
                          <div className="flex items-center gap-3 pt-2">
                             <Avatar className="h-10 w-10">
-                                <AvatarImage src={item.author_avatar} />
+                                <AvatarImage src={item.author_avatar ?? undefined} />
                                 <AvatarFallback>{item.author.charAt(0)}</AvatarFallback>
                             </Avatar>
                             <div>

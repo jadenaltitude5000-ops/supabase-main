@@ -8,22 +8,20 @@ import { useRouter } from 'next/navigation';
 import type { SupabaseClient, User } from '@supabase/supabase-js';
 import type { Database } from '@/lib/database.types';
 
+// Define a more specific type for the client instance if needed, or use 'any' as a last resort.
+type SupabaseClientType = SupabaseClient<Database>;
+
 type SupabaseContextType = {
-  supabase: SupabaseClient<Database>;
+  supabase: SupabaseClientType;
   user: User | null;
   isUserLoading: boolean;
 };
 
-const SupabaseContext = createContext<SupabaseContextType | undefined>(
-  undefined
-);
+const SupabaseContext = createContext<SupabaseContextType | undefined>(undefined);
 
-export const SupabaseProvider = ({
-  children,
-}: {
-  children: React.ReactNode;
-}) => {
-  const [supabase] = useState(() => createBrowserClient() as SupabaseClient<Database>);
+export const SupabaseProvider = ({ children }: { children: React.ReactNode }) => {
+  // Use the more specific type returned by the client creation helper
+  const supabase = createBrowserClient() as unknown as SupabaseClientType;
   const [user, setUser] = useState<User | null>(null);
   const [isUserLoading, setIsUserLoading] = useState(true);
   const router = useRouter();
@@ -32,25 +30,27 @@ export const SupabaseProvider = ({
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session) {
-        setUser(session.user);
-      } else {
-        setUser(null);
-      }
-      
+      setUser(session?.user ?? null);
       setIsUserLoading(false);
-
-      if (event === 'SIGNED_IN') {
-        // Can handle redirect on sign-in here if needed
-      } else if (event === 'SIGNED_OUT') {
+      
+      if (event === 'SIGNED_OUT') {
         router.push('/signin');
       }
     });
 
-    return () => {
+  // Fetch initial session
+  const getInitialSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setUser(session?.user ?? null);
+      setIsUserLoading(false);
+    };
+  getInitialSession();
+
+
+  return () => {
       subscription.unsubscribe();
     };
-  }, [router, supabase]);
+  }, [supabase, router]);
 
   return (
     <SupabaseContext.Provider value={{ supabase, user, isUserLoading }}>

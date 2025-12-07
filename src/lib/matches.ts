@@ -113,7 +113,7 @@ export async function skillSyncNet(input: SkillSyncNetInput): Promise<SkillSyncN
       return { match: null };
     }
     
-    const { freelancer, score } = bestMatch as { freelancer: AppUser, score: number };
+    const { freelancer, score } = bestMatch;
     
     const reasoning = `This freelancer is a strong match due to a high skill overlap with your project requirements. Their experience level is well-aligned with your project's scope, and the proposed budget is fair for their expertise.`;
     
@@ -121,8 +121,8 @@ export async function skillSyncNet(input: SkillSyncNetInput): Promise<SkillSyncN
       match: {
         freelancer: {
           name: freelancer.name,
-          headline: freelancer.headline || '',
-          skills: freelancer.skills || [],
+          headline: freelancer.headline ?? '',
+          skills: freelancer.skills ?? [],
           matchReasoning: reasoning,
           matchConfidence: Math.min(99, Math.round(score * 100)), // Cap confidence at 99%
         },
