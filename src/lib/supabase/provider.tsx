@@ -1,11 +1,12 @@
 
 'use client';
 
-import { createContext, useContext, useState, useEffect } from 'react';
-import { SupabaseClient, User } from '@supabase/supabase-js';
-import { Database } from '../database.types';
-import { createBrowserClient } from './client';
+import { createContext, useContext, useEffect, useState } from 'react';
+import { createBrowserClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
+
+import type { SupabaseClient, User } from '@supabase/supabase-js';
+import type { Database } from '@/lib/database.types';
 
 type SupabaseContextType = {
   supabase: SupabaseClient<Database>;
@@ -13,10 +14,16 @@ type SupabaseContextType = {
   isUserLoading: boolean;
 };
 
-const SupabaseContext = createContext<SupabaseContextType | undefined>(undefined);
+const SupabaseContext = createContext<SupabaseContextType | undefined>(
+  undefined
+);
 
-export const SupabaseProvider = ({ children }: { children: React.ReactNode }) => {
-  const supabase = createBrowserClient() as SupabaseClient<Database>;
+export const SupabaseProvider = ({
+  children,
+}: {
+  children: React.ReactNode;
+}) => {
+  const [supabase] = useState(() => createBrowserClient());
   const [user, setUser] = useState<User | null>(null);
   const [isUserLoading, setIsUserLoading] = useState(true);
   const router = useRouter();
@@ -25,27 +32,25 @@ export const SupabaseProvider = ({ children }: { children: React.ReactNode }) =>
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
-      setUser(session?.user ?? null);
-      setIsUserLoading(false);
+      if (session) {
+        setUser(session.user);
+      } else {
+        setUser(null);
+      }
       
-      if (event === 'SIGNED_OUT') {
+      setIsUserLoading(false);
+
+      if (event === 'SIGNED_IN') {
+        // Can handle redirect on sign-in here if needed
+      } else if (event === 'SIGNED_OUT') {
         router.push('/signin');
       }
     });
 
-    // Fetch initial session
-    const getInitialSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setUser(session?.user ?? null);
-      setIsUserLoading(false);
-    };
-    getInitialSession();
-
-
     return () => {
       subscription.unsubscribe();
     };
-  }, [supabase, router]);
+  }, [router, supabase]);
 
   return (
     <SupabaseContext.Provider value={{ supabase, user, isUserLoading }}>
