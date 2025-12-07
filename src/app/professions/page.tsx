@@ -403,6 +403,8 @@ function PostComposer({ onPostCreated }: { onPostCreated: (newPost: PostType) =>
         file_url: fileUrl,
         file_name: fileName,
         type: 'default',
+        job_details: null,
+        original_post: null,
         ...extraPostData,
     };
     
