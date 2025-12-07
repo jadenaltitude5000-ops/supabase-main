@@ -462,7 +462,7 @@ export function GlobalSearch() {
             <DropdownMenuTrigger asChild>
                 <Button variant="bleep" className="rounded-full p-0 h-8 w-8">
                     <Avatar className="h-8 w-8 border-2 border-border/50">
-                        <AvatarImage src={avatarUrl || undefined} alt={displayName || ''} />
+                        <AvatarImage src={avatarUrl ?? undefined} alt={displayName || ''} />
                         <AvatarFallback>
                             <UserIcon className="h-5 w-5" />
                         </AvatarFallback>
@@ -510,3 +510,5 @@ export function GlobalSearch() {
     </div>
   );
 }
+
+    
