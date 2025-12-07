@@ -1,3 +1,4 @@
+
 export type Json =
   | string
   | number
@@ -746,6 +747,7 @@ export type Database = {
           image_url: string
           images: string[] | null
           media_type: string
+          object_fit: string | null
           tags: string[]
           title: string
           updated_at: string | null
@@ -764,6 +766,7 @@ export type Database = {
           image_url: string
           images?: string[] | null
           media_type?: string
+          object_fit?: string | null
           tags: string[]
           title: string
           updated_at?: string | null
@@ -782,6 +785,7 @@ export type Database = {
           image_url?: string
           images?: string[] | null
           media_type?: string
+          object_fit?: string | null
           tags?: string[]
           title?: string
           updated_at?: string | null

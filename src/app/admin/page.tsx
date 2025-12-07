@@ -366,7 +366,7 @@ function PortfolioCard({ item, layout }: { item: PortfolioItem; layout: Portfoli
   );
 }
 
-function AddPortfolioItemDialog({ onSave }: { onSave: (item: Omit<PortfolioItem, 'id' | 'created_at' | 'updated_at' | 'author_id' | 'author' | 'author_avatar' | 'author_headline' | 'user_id' | 'media_type' | 'images' | 'app_url' | 'video_url'> & { object_fit?: 'contain' | 'cover' }) => void }) {
+function AddPortfolioItemDialog({ onSave }: { onSave: (item: Omit<PortfolioItem, 'id' | 'created_at' | 'updated_at' | 'author_id' | 'author' | 'author_avatar' | 'author_headline' | 'user_id' | 'media_type' | 'images' | 'app_url' | 'video_url'>) => void }) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [tags, setTags] = useState('');
@@ -996,8 +996,8 @@ function AdminPageInternal() {
           company_name: companyName,
           company_size: companySize as BusinessProfile['company_size'],
           hiring_goals: hiringGoals,
+          id: authUser.id,
           industry,
-          id: authUser.id
       };
       // In Supabase, this would be an upsert
       const { error } = await supabase.from('business_profiles').upsert({ ...profileData });
@@ -1034,7 +1034,7 @@ function AdminPageInternal() {
   };
 
   
-  const handleAddPortfolioItem = async (itemData: Omit<PortfolioItem, 'id' | 'created_at' | 'updated_at' | 'author_id' | 'author' | 'author_avatar' | 'author_headline' | 'user_id' | 'media_type' | 'images' | 'app_url' | 'video_url'> & { object_fit?: 'contain' | 'cover' }) => {
+  const handleAddPortfolioItem = async (itemData: Omit<PortfolioItem, 'id' | 'created_at' | 'updated_at' | 'author_id' | 'author' | 'author_avatar' | 'author_headline' | 'user_id' | 'media_type' | 'images' | 'app_url' | 'video_url'>) => {
     if (!authUser || !supabase || !user) return;
      const newPortfolioItem: PortfolioItem = {
         id: crypto.randomUUID(),
@@ -1537,7 +1537,7 @@ function AdminPageInternal() {
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                         <Label htmlFor="email">{t.email}</Label>
-                        <Input id="email" type="email" defaultValue={user?.email || ''} disabled />
+                        <Input id="email" type="email" value={user?.email || ''} disabled />
                     </div>
                      <div className="space-y-2">
                         <Label htmlFor="phone">Phone Number</Label>
