@@ -23,7 +23,7 @@ export const SupabaseProvider = ({
 }: {
   children: React.ReactNode;
 }) => {
-  const [supabase] = useState(() => createBrowserClient());
+  const [supabase] = useState(() => createBrowserClient() as SupabaseClient<Database>);
   const [user, setUser] = useState<User | null>(null);
   const [isUserLoading, setIsUserLoading] = useState(true);
   const router = useRouter();
