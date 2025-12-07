@@ -34,9 +34,9 @@ import { cn } from "@/lib/utils";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent } from "@/components/ui/dropdown-menu";
 
 const clientFormSchema = z.object({
-  projectTitle: z.string().min(5, "Project title must be at least 5 characters."),
-  projectDescription: z.string().min(20, "Please provide a detailed project description."),
-  requiredSkills: z.string().min(3, "Please list at least one required skill."),
+  project_title: z.string().min(5, "Project title must be at least 5 characters."),
+  project_description: z.string().min(20, "Please provide a detailed project description."),
+  required_skills: z.string().min(3, "Please list at least one required skill."),
   budget: z.coerce.number().min(1, "Budget must be a positive number."),
   timeline: z.enum(["<1 week", "1-2 weeks", "2-4 weeks", "1-2 months", ">2 months"]),
 });
@@ -457,8 +457,8 @@ function ClientView() {
     const form = useForm<ClientFormValues>({
         resolver: zodResolver(clientFormSchema),
         defaultValues: {
-            projectDescription: "",
-            requiredSkills: ""
+            project_description: "",
+            required_skills: ""
         }
     });
     
@@ -484,16 +484,16 @@ function ClientView() {
     const isLoading = loading || isLoadingCurrentUser;
 
     const handleAdvancedSave = (requirements: string) => {
-        const currentDescription = form.getValues("projectDescription");
+        const currentDescription = form.getValues("project_description");
         const baseDescription = currentDescription.split("\n\nAdvanced Requirements:")[0];
-        form.setValue("projectDescription", baseDescription + requirements, { shouldValidate: true });
+        form.setValue("project_description", baseDescription + requirements, { shouldValidate: true });
     };
 
     const handleNicheSave = (niches: string[]) => {
         setSelectedNiches(niches);
-        const currentSkills = form.getValues("requiredSkills").split(',').map(s => s.trim()).filter(s => s && !Object.values(freelanceNiches).flat().includes(s));
+        const currentSkills = form.getValues("required_skills").split(',').map(s => s.trim()).filter(s => s && !Object.values(freelanceNiches).flat().includes(s));
         const newSkills = [...currentSkills, ...niches].join(', ');
-        form.setValue("requiredSkills", newSkills, { shouldValidate: true });
+        form.setValue("required_skills", newSkills, { shouldValidate: true });
     };
 
     const onSubmit: SubmitHandler<ClientFormValues> = async (data) => {
@@ -509,7 +509,7 @@ function ClientView() {
 
         try {
             // Stage 1: Fetch candidates based on niches
-            const skillsAndNiches = data.requiredSkills.split(',').map(s => s.trim()).filter(Boolean);
+            const skillsAndNiches = data.required_skills.split(',').map(s => s.trim()).filter(Boolean);
             if (skillsAndNiches.length === 0) {
                 setError("Please provide at least one required skill or niche.");
                 setLoading(false);
@@ -533,7 +533,7 @@ function ClientView() {
 
             // Stage 2: Build corpus and vectors for the pre-filtered candidates
             const corpus = candidates.map(u => `${u.bio || ''} ${u.skills?.join(' ') || ''}`);
-            const briefText = `${data.projectTitle} ${data.projectDescription} ${data.requiredSkills}`;
+            const briefText = `${data.project_title} ${data.project_description} ${data.required_skills}`;
             const combinedCorpus = [briefText, ...corpus];
             const vocabulary = buildVocabulary(combinedCorpus);
             
@@ -546,7 +546,13 @@ function ClientView() {
             // Stage 3: Run the matching algorithm
             const input: SkillSyncNetInput = {
                 context: "client_seeking_freelancer",
-                clientBrief: data,
+                clientBrief: {
+                    projectTitle: data.project_title,
+                    projectDescription: data.project_description,
+                    requiredSkills: data.required_skills,
+                    budget: data.budget,
+                    timeline: data.timeline,
+                },
                 clientBriefVector: clientBriefVector,
                 freelancerProfilesWithVectors: freelancerProfilesWithVectors,
             };
@@ -586,9 +592,9 @@ function ClientView() {
     };
 
     const updateSkillsFromNiches = (niches: string[]) => {
-        const currentSkills = form.getValues("requiredSkills").split(',').map(s => s.trim()).filter(s => s && !Object.values(freelanceNiches).flat().includes(s));
+        const currentSkills = form.getValues("required_skills").split(',').map(s => s.trim()).filter(s => s && !Object.values(freelanceNiches).flat().includes(s));
         const newSkills = [...new Set([...currentSkills, ...niches])].join(', ');
-        form.setValue("requiredSkills", newSkills, { shouldValidate: true });
+        form.setValue("required_skills", newSkills, { shouldValidate: true });
     };
 
     return (
@@ -602,13 +608,13 @@ function ClientView() {
                     ) : (
                          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                             <div className="space-y-2">
-                                <Label htmlFor="projectTitle">Project Title</Label>
-                                <Input id="projectTitle" {...form.register("projectTitle")} placeholder="e.g., Redesign of E-commerce Checkout Flow" />
-                                {form.formState.errors.projectTitle && <p className="text-sm text-destructive">{form.formState.errors.projectTitle.message}</p>}
+                                <Label htmlFor="project_title">Project Title</Label>
+                                <Input id="project_title" {...form.register("project_title")} placeholder="e.g., Redesign of E-commerce Checkout Flow" />
+                                {form.formState.errors.project_title && <p className="text-sm text-destructive">{form.formState.errors.project_title.message}</p>}
                             </div>
                              <div className="space-y-2">
                                 <div className="flex items-center justify-between">
-                                    <Label htmlFor="projectDescription">Project Description</Label>
+                                    <Label htmlFor="project_description">Project Description</Label>
                                     <Dialog>
                                         <DialogTrigger asChild>
                                             <Button type="button" variant="link" className="text-muted-foreground hover:text-primary"><SlidersHorizontal className="mr-2 h-4 w-4" />Add Requirements</Button>
@@ -616,12 +622,12 @@ function ClientView() {
                                         <AdvancedRequirementsDialog onSave={handleAdvancedSave} />
                                     </Dialog>
                                 </div>
-                                <Textarea id="projectDescription" {...form.register("projectDescription")} placeholder="Describe the project goals, deliverables, and any specific requirements..." className="min-h-32" />
-                                {form.formState.errors.projectDescription && <p className="text-sm text-destructive">{form.formState.errors.projectDescription.message}</p>}
+                                <Textarea id="project_description" {...form.register("project_description")} placeholder="Describe the project goals, deliverables, and any specific requirements..." className="min-h-32" />
+                                {form.formState.errors.project_description && <p className="text-sm text-destructive">{form.formState.errors.project_description.message}</p>}
                             </div>
                             <div className="space-y-2">
                                 <div className="flex items-center justify-between">
-                                    <Label htmlFor="requiredSkills">Required Skills & Niches</Label>
+                                    <Label htmlFor="required_skills">Required Skills & Niches</Label>
                                     <Dialog>
                                         <DialogTrigger asChild>
                                             <Button type="button" variant="link" className="text-muted-foreground hover:text-primary">
@@ -632,13 +638,13 @@ function ClientView() {
                                         <NichePickerDialog onSave={handleNicheSave} initialNiches={selectedNiches} />
                                     </Dialog>
                                 </div>
-                                <Input id="requiredSkills" {...form.register("requiredSkills")} placeholder="e.g., Figma, UX Research, Prototyping" />
+                                <Input id="required_skills" {...form.register("required_skills")} placeholder="e.g., Figma, UX Research, Prototyping" />
                                 <div className="flex flex-wrap gap-1 pt-1">
                                     {selectedNiches.map(niche => (
                                         <Badge key={niche} variant="secondary">{niche}</Badge>
                                     ))}
                                 </div>
-                                 {form.formState.errors.requiredSkills && <p className="text-sm text-destructive">{form.formState.errors.requiredSkills.message}</p>}
+                                 {form.formState.errors.required_skills && <p className="text-sm text-destructive">{form.formState.errors.required_skills.message}</p>}
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                  <div className="space-y-2">
@@ -826,13 +832,13 @@ function FreelancerView() {
 
         const fetchUserData = async () => {
             setIsLoadingUsers(true);
-            const { data: userData } = await supabase.from('users').select('*').eq('id', authUser.id).single();
-            if (userData) setCurrentUser(userData as UserType);
+            const { data: userData } = await supabase.from('users').select('*, freelancer_profiles(*)').eq('id', authUser.id).single();
+            if (userData) {
+                 setCurrentUser(userData as UserType);
+                 const profile = (userData as any).freelancer_profiles;
+                 setFreelancerProfile(Array.isArray(profile) ? profile[0] : profile);
+            }
             setIsLoadingUsers(false);
-
-            setIsLoadingFreelancerProfile(true);
-            const { data: profileData } = await supabase.from('freelancer_profiles').select('*').eq('id', authUser.id).single();
-            if (profileData) setFreelancerProfile(profileData as FreelancerProfile);
             setIsLoadingFreelancerProfile(false);
         };
 
@@ -890,7 +896,7 @@ function FreelancerView() {
         setError(null);
         setResult(null);
 
-        if (!currentUser) {
+        if (!currentUser || !freelancerProfile) {
             setError("Could not find your profile for automatch. Please complete your profile.");
             setLoading(false);
             return;
@@ -899,17 +905,13 @@ function FreelancerView() {
         try {
             const freelancerProfileData: FreelancerProfile = {
                 id: currentUser.id,
-                name: currentUser.name || '',
-                headline: currentUser.headline || '',
-                bio: currentUser.bio || '',
-                skills: currentUser.skills || [],
-                experience_years: currentUser.experience_years,
-                email: currentUser.email || '',
+                title: freelancerProfile.title,
+                skills: currentUser.skills,
             } as any;
 
             const input: SkillSyncNetInput = {
                 context: "freelancer_seeking_project",
-                freelancerProfile: freelancerProfileData,
+                freelancerProfile: freelancerProfileData as any, // needs fixing if we use it
                 clientBriefVector: new Map(), 
                 freelancerProfilesWithVectors: [],
             };
@@ -1060,7 +1062,7 @@ function MatchCardActions({ userId }: { userId: string }) {
     );
 }
 
-function FreelancerMatchCard({ freelancer, freelancerUser }: { freelancer: NonNullable<NonNullable<SkillSyncNetOutput['match']>['freelancer']>, freelancerUser?: UserType }) {
+function FreelancerMatchCard({ freelancer, freelancerUser }: { freelancer: NonNullable<NonNullable<SkillSyncNetOutput['match']>['freelancer']>, freelancerUser?: UserType | null }) {
      return (
         <Card className="shadow-lg">
             <CardHeader>
@@ -1195,6 +1197,3 @@ export default function SkillSyncNetPage() {
     </ClientOnly>
   );
 }
-
-    
-
