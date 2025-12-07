@@ -12,9 +12,9 @@ import type { User } from './types';
 
 // Schema definitions remain for input validation.
 export const ClientBriefSchema = z.object({
-    projectTitle: z.string(),
-    projectDescription: z.string(),
-    requiredSkills: z.string(),
+    project_title: z.string(),
+    project_description: z.string(),
+    required_skills: z.string(),
     budget: z.number(),
     timeline: z.string(),
     experience_years: z.number().optional(), // New field for fairness calculation
