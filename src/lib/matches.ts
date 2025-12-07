@@ -8,7 +8,7 @@
 
 import { z } from 'zod';
 import { cosineSimilarity, createTfIdfVector, buildVocabulary } from '@/lib/algorithms/text-analysis';
-import type { User } from './types';
+import type { User, AppUser } from './types';
 
 // Schema definitions remain for input validation.
 export const ClientBriefSchema = z.object({
@@ -113,7 +113,7 @@ export async function skillSyncNet(input: SkillSyncNetInput): Promise<SkillSyncN
       return { match: null };
     }
     
-    const { freelancer, score } = bestMatch;
+    const { freelancer, score } = bestMatch as { freelancer: AppUser, score: number };
     
     const reasoning = `This freelancer is a strong match due to a high skill overlap with your project requirements. Their experience level is well-aligned with your project's scope, and the proposed budget is fair for their expertise.`;
     

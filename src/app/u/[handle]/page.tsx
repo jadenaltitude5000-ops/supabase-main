@@ -9,13 +9,14 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 export default function UserProfilePage() {
   const params = useParams();
-  const { handle } = params;
+  const handleParam = params.handle;
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const supabase = useSupabase();
 
   useEffect(() => {
+    const handle = Array.isArray(handleParam) ? handleParam[0] : handleParam;
     if (!handle || !supabase) return;
 
     const fetchUser = async () => {
@@ -39,7 +40,7 @@ export default function UserProfilePage() {
     };
 
     fetchUser();
-  }, [handle, supabase]);
+  }, [handleParam, supabase]);
 
 
   if (loading) {
@@ -73,7 +74,7 @@ export default function UserProfilePage() {
         <div className="max-w-4xl mx-auto">
             <div className="h-48 bg-muted rounded-lg" style={{ backgroundImage: `url(${user.business_card_background ?? ''})`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
             <div className="flex items-end -mt-16 ml-8">
-                <img src={user.avatar ?? undefined} alt={user.name} className="h-32 w-32 rounded-full border-4 border-background bg-background" />
+                <img src={user.avatar ?? undefined} alt={user.name ?? ''} className="h-32 w-32 rounded-full border-4 border-background bg-background" />
             </div>
              <div className="mt-4">
                 <h1 className="text-3xl font-bold">{user.name}</h1>

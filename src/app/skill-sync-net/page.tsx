@@ -18,7 +18,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import { ClientOnly } from "@/components/layout/client-only";
 import { useUser as useAuthUser, useSupabase } from "@/lib/supabase/provider";
-import type { User as UserType, FreelancerProfile } from '@/lib/types';
+import type { User as UserType, FreelancerProfile, AppUser } from '@/lib/types';
 import { Badge } from "@/components/ui/badge";
 import { z } from "zod";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
@@ -547,9 +547,9 @@ function ClientView() {
             const input: SkillSyncNetInput = {
                 context: "client_seeking_freelancer",
                 clientBrief: {
-                    projectTitle: data.project_title,
-                    projectDescription: data.project_description,
-                    requiredSkills: data.required_skills,
+                    project_title: data.project_title,
+                    project_description: data.project_description,
+                    required_skills: data.required_skills,
                     budget: data.budget,
                     timeline: data.timeline,
                 },
@@ -807,7 +807,7 @@ function FreelancerView() {
     const supabase = useSupabase();
     const { user: authUser } = useAuthUser();
 
-    const [currentUser, setCurrentUser] = useState<UserType | null>(null);
+    const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
     const [isLoadingUsers, setIsLoadingUsers] = useState(true);
 
     const [freelancerProfile, setFreelancerProfile] = useState<FreelancerProfile | null>(null);
@@ -834,7 +834,7 @@ function FreelancerView() {
             setIsLoadingUsers(true);
             const { data: userData } = await supabase.from('users').select('*, freelancer_profiles(*)').eq('id', authUser.id).single();
             if (userData) {
-                 setCurrentUser(userData as UserType);
+                 setCurrentUser(userData as AppUser);
                  const profile = (userData as any).freelancer_profiles;
                  setFreelancerProfile(Array.isArray(profile) ? profile[0] : profile);
             }
@@ -851,7 +851,7 @@ function FreelancerView() {
             hasBio: !!currentUser.bio,
             hasJobTitle: !!currentUser.job_title,
             hasEnoughSkills: (currentUser.skills?.length || 0) >= 7,
-            hasExperience: (currentUser.experiences as any[] | null)?.length || 0 > 0,
+            hasExperience: ((currentUser.experiences as any[] | null)?.length || 0) > 0,
             hasSkillSyncInfo: !!(freelancerProfile?.title && freelancerProfile?.availability),
         };
         const completedCount = Object.values(checks).filter(Boolean).length;

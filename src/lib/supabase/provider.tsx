@@ -16,7 +16,7 @@ type SupabaseContextType = {
 const SupabaseContext = createContext<SupabaseContextType | undefined>(undefined);
 
 export const SupabaseProvider = ({ children }: { children: React.ReactNode }) => {
-  const supabase = createBrowserClient();
+  const supabase = createBrowserClient() as SupabaseClient<Database>;
   const [user, setUser] = useState<User | null>(null);
   const [isUserLoading, setIsUserLoading] = useState(true);
   const router = useRouter();
