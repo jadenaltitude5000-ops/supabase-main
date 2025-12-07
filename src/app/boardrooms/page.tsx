@@ -131,8 +131,8 @@ function ChatPanel({ project, onToggleNotepad }: { project: Project | null; onTo
 
     const [newMessage, setNewMessage] = useState('');
     const [imageUrl, setImageUrl] = useState<string | null>(null);
-    const [fileUrl, setFileUrl] = useState<string | undefined>(undefined);
-    const [fileName, setFileName] = useState<string | undefined>(undefined);
+    const [fileUrl, setFileUrl] = useState<string | null>(null);
+    const [fileName, setFileName] = useState<string | null>(null);
     const [isSending, setIsSending] = useState(false);
 
     const [colleagues, setColleagues] = useState<User[]>([]);
@@ -173,8 +173,8 @@ function ChatPanel({ project, onToggleNotepad }: { project: Project | null; onTo
           await supabase.from('project_messages').insert(messageData);
           setNewMessage('');
           setImageUrl(null);
-          setFileUrl(undefined);
-          setFileName(undefined);
+          setFileUrl(null);
+          setFileName(null);
         } catch (error: any) {
           console.error("Error sending message:", error);
           toast({ variant: 'destructive', title: "Message Failed", description: error.message });
@@ -293,7 +293,7 @@ function ChatPanel({ project, onToggleNotepad }: { project: Project | null; onTo
                                 <div className="flex items-center gap-2 rounded-md border bg-muted p-1 text-sm">
                                     <Paperclip className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                                     <span className="flex-1 truncate">{fileName}</span>
-                                    <Button variant="ghost" size="icon" className="h-6 w-6 flex-shrink-0" onClick={() => { setFileUrl(undefined); setFileName(undefined); }}>
+                                    <Button variant="ghost" size="icon" className="h-6 w-6 flex-shrink-0" onClick={() => { setFileUrl(null); setFileName(null); }}>
                                         <X className="h-4 w-4" />
                                     </Button>
                                 </div>
