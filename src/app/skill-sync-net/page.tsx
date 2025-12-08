@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from "react";
@@ -12,13 +11,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { User, Zap, AlertCircle, Kanban, CircleDollarSign, Clock, SlidersHorizontal, Settings2, Building, UserPlus, Barcode, User as UserIcon, ShieldCheck, BookOpen, Heart, Info, CalendarDays, PercentCircle, ChevronDown, CheckCircle, XCircle } from "lucide-react";
 import { useForm, SubmitHandler, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { skillSyncNet, type SkillSyncNetInput, type SkillSyncNetOutput } from "@/lib/matches";
+import { skillSyncNet, type SkillSyncNetInput, type SkillSyncNetOutput, type FreelancerProfile } from "@/lib/matches";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import { ClientOnly } from "@/components/layout/client-only";
 import { useUser as useAuthUser, useSupabase } from "@/lib/supabase/provider";
-import type { User as UserType, FreelancerProfile, AppUser } from '@/lib/types';
+import type { User as UserType, AppUser } from '@/lib/types';
 import { Badge } from "@/components/ui/badge";
 import { z } from "zod";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
@@ -246,7 +245,7 @@ function AdvancedRequirementsDialog({ onSave }: { onSave: (reqs: string) => void
                  <div className="py-4 overflow-y-auto">
                     <DialogHeader className="px-6 pb-4">
                         <DialogTitle className="text-xl font-bold">{activeCategory}</DialogTitle>
-                        <DialogDescription>Select the criteria that best fit your project.</DialogDescription>
+                        <DialogDescription>Select criteria that best fit your project.</DialogDescription>
                     </DialogHeader>
                     <div className="px-6 space-y-8">
                         {Object.entries(requirementCategories[activeCategory]).map(([subCategory, reqs]) => (
@@ -281,7 +280,7 @@ function AdvancedRequirementsDialog({ onSave }: { onSave: (reqs: string) => void
 
 function GuidelinesDialog({ open, onOpenChange }: { open: boolean, onOpenChange: (open: boolean) => void }) {
     const guidelines = [
-        { title: "Respect Their Business", text: "They have bills to pay. Treat them as the professionals they are." },
+        { title: "Respect Their Business", text: "They have bills to pay. Treat them as professionals they are." },
         { title: "Lead with Your Budget", text: "Don't make them guess. Be upfront about what you can afford." },
         { title: "Pay a Deposit", text: "This is non-negotiable for serious clients and secures your freelancer's time." },
         { title: "Pay on Time", text: "Fast payment terms make you a hero and a preferred client." },
@@ -538,10 +537,24 @@ function ClientView() {
             const vocabulary = buildVocabulary(combinedCorpus);
             
             const clientBriefVector = createTfIdfVector(briefText, combinedCorpus, vocabulary);
-            const freelancerProfilesWithVectors = candidates.map(u => ({
-                profile: u as UserType,
-                vector: createTfIdfVector(`${u.bio || ''} ${u.skills?.join(' ') || ''}`, combinedCorpus, vocabulary),
-            }));
+            
+            // Create a new array with proper typing to match the expected schema
+            const freelancerProfilesWithVectors = candidates.map(u => {
+                // Create a profile object that matches the expected FreelancerProfile type
+                const profile: FreelancerProfile = {
+                    name: u.name || '',
+                    headline: u.headline || '',
+                    bio: u.bio || '',
+                    skills: u.skills || [], // Ensure skills is always an array
+                    experience_years: u.experience_years ?? undefined, // Convert null to undefined
+                    email: u.email,
+                };
+                
+                return {
+                    profile,
+                    vector: createTfIdfVector(`${u.bio || ''} ${u.skills?.join(' ') || ''}`, combinedCorpus, vocabulary),
+                };
+            });
 
             // Stage 3: Run the matching algorithm
             const input: SkillSyncNetInput = {
@@ -734,7 +747,7 @@ function ProfileStrengthCard({ profileCompletion }: { profileCompletion: { progr
             <CardFooter>
                  <Button asChild className="w-full">
                     <Link href="/admin">Complete Your Profile</Link>
-                </Button>
+                 </Button>
             </CardFooter>
         </Card>
     )
@@ -810,7 +823,7 @@ function FreelancerView() {
     const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
     const [isLoadingUsers, setIsLoadingUsers] = useState(true);
 
-    const [freelancerProfile, setFreelancerProfile] = useState<FreelancerProfile | null>(null);
+    const [freelancerProfile, setFreelancerProfile] = useState<any>(null); // Use any for now since we don't have the exact type
     const [isLoadingFreelancerProfile, setIsLoadingFreelancerProfile] = useState(true);
 
     useEffect(() => {
@@ -852,7 +865,7 @@ function FreelancerView() {
             hasJobTitle: !!currentUser.job_title,
             hasEnoughSkills: (currentUser.skills?.length || 0) >= 7,
             hasExperience: ((currentUser.experiences as any[] | null)?.length || 0) > 0,
-            hasSkillSyncInfo: !!(freelancerProfile?.title && freelancerProfile?.availability),
+            hasSkillSyncInfo: !!(freelancerProfile?.title && freelancerProfile?.availability), // Check for actual properties
         };
         const completedCount = Object.values(checks).filter(Boolean).length;
         const totalChecks = Object.keys(checks).length;
@@ -903,15 +916,19 @@ function FreelancerView() {
         }
 
         try {
+            // Create a properly typed FreelancerProfile object
             const freelancerProfileData: FreelancerProfile = {
-                id: currentUser.id,
-                title: freelancerProfile.title,
-                skills: currentUser.skills,
-            } as any;
+                name: currentUser.name || '',
+                headline: currentUser.job_title || '',
+                bio: currentUser.bio || '',
+                skills: currentUser.skills || [], // Ensure skills is always an array
+                experience_years: currentUser.experience_years ?? undefined, // Convert null to undefined
+                email: currentUser.email,
+            };
 
             const input: SkillSyncNetInput = {
                 context: "freelancer_seeking_project",
-                freelancerProfile: freelancerProfileData as any, // needs fixing if we use it
+                freelancerProfile: freelancerProfileData,
                 clientBriefVector: new Map(), 
                 freelancerProfilesWithVectors: [],
             };

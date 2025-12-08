@@ -1,4 +1,3 @@
-
 /**
  * @fileOverview Core matchmaking and recommendation algorithms.
  * This file replaces all AI-powered logic with deterministic, rule-based systems.
@@ -39,7 +38,7 @@ export const SkillSyncNetInputSchema = z.object({
   // This is simplified for demonstration.
   clientBriefVector: z.map(z.string(), z.number()),
   freelancerProfilesWithVectors: z.array(z.object({
-      profile: z.custom<User>(),
+      profile: FreelancerProfileSchema, // Use the schema directly
       vector: z.map(z.string(), z.number())
   })),
 });
@@ -84,10 +83,11 @@ export async function skillSyncNet(input: SkillSyncNetInput): Promise<SkillSyncN
         return { match: null }; // No candidates to match against
     }
 
-    let bestMatch: { freelancer: User; score: number } | null = null;
+    // Use a for loop instead of forEach to properly track the best match
+    let bestMatch: { freelancer: FreelancerProfile; score: number } | null = null;
     let highestScore = -1;
 
-    freelancerProfilesWithVectors.forEach(({ profile, vector }) => {
+    for (const { profile, vector } of freelancerProfilesWithVectors) {
       const similarity = cosineSimilarity(clientBriefVector, vector);
       
       // Fairness algorithm: Adjust score based on experience and budget
@@ -107,7 +107,7 @@ export async function skillSyncNet(input: SkillSyncNetInput): Promise<SkillSyncN
         highestScore = finalScore;
         bestMatch = { freelancer: profile, score: finalScore };
       }
-    });
+    }
 
     if (bestMatch) {
       const { freelancer, score } = bestMatch;
