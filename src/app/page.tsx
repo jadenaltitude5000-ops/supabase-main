@@ -22,6 +22,8 @@ import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
 import { ParticleNetwork, type Rect } from '@/components/features/landing/particle-network';
 
+export const dynamic = 'force-dynamic'
+
 const features = [
   {
     icon: <Radar className="h-6 w-6 text-black" strokeWidth={1} />,
