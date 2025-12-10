@@ -9,8 +9,6 @@ import { Toaster } from '@/components/ui/toaster';
 import { CookieConsentBanner } from '@/components/layout/cookie-consent-banner';
 import { useTheme } from '@/context/theme-context';
 
-export const dynamic = 'force-dynamic';
-
 function AppBody({ children }: { children: React.ReactNode }) {
   const { theme, setTheme } = useTheme();
 
@@ -32,6 +30,7 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body>
